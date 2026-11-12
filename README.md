@@ -13,9 +13,16 @@
 - 网易云音乐、EasyTier 联机、启动视频、版本文件编辑器
 - 百宝箱：ACE 反作弊清理、解除 60 帧限制、内存优化
 
+## 目录
+
+```
+src/    VB.NET / WPF 源码（Plain Craft Launcher 2.vbproj）
+dist/   构建产物 PCL-ForK.exe
+```
+
 ## 构建
 
-需要 .NET Framework 4.8 SDK 与 Visual Studio 2019+。
+进入 `src` 后用 Visual Studio 打开 `Plain Craft Launcher 2.sln`，或：
 
 ```
 dotnet msbuild "Plain Craft Launcher 2\Plain Craft Launcher 2.vbproj" -p:Configuration=Release
