@@ -1,0 +1,137 @@
+<local:MyPageRight
+    x:Class="PageInstanceSeed"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="clr-namespace:PCL">
+
+    <Grid Margin="0,0,0,10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition />
+        </Grid.RowDefinitions>
+
+        <local:MyCard Margin="0,10,0,15" Title="种子地图">
+            <StackPanel Margin="22,44,22,14">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="种子" VerticalAlignment="Center" Margin="0,0,10,0" />
+                    <local:MyTextBox Grid.Column="1" x:Name="TextSeed" Height="30" Width="190" Margin="0,0,12,0" HintText="输入世界种子" />
+                    <local:MyComboBox Grid.Column="2" x:Name="ComboVersion" Height="30" Margin="0,0,12,0" />
+                    <local:MyComboBox Grid.Column="3" x:Name="ComboDimension" Height="30" Margin="0,0,12,0">
+                        <local:MyComboBoxItem Content="主世界" Tag="0" />
+                        <local:MyComboBoxItem Content="下界" Tag="-1" />
+                        <local:MyComboBoxItem Content="末地" Tag="1" />
+                    </local:MyComboBox>
+                    <local:MyComboBox Grid.Column="4" x:Name="ComboRange" Height="30" Margin="0,0,12,0">
+                        <local:MyComboBoxItem Content="半径 256" Tag="256" />
+                        <local:MyComboBoxItem Content="半径 512" Tag="512" />
+                        <local:MyComboBoxItem Content="半径 1024" Tag="1024" />
+                        <local:MyComboBoxItem Content="半径 2048" Tag="2048" />
+                        <local:MyComboBoxItem Content="半径 4096" Tag="4096" />
+                        <local:MyComboBoxItem Content="半径 8192" Tag="8192" />
+                        <local:MyComboBoxItem Content="半径 16384" Tag="16384" />
+                        <local:MyComboBoxItem Content="半径 32768" Tag="32768" />
+                    </local:MyComboBox>
+                    <local:MyButton Grid.Column="5" x:Name="BtnLoad" Height="30" Padding="18,0,18,0" Margin="0,0,12,0" Text="生成地图" ColorType="Highlight" />
+                    <local:MyButton Grid.Column="6" x:Name="BtnReadSave" Height="30" Padding="18,0,18,0" HorizontalAlignment="Left" Text="从存档读取种子" />
+                </Grid>
+                <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                    <TextBlock Text="中心 X" VerticalAlignment="Center" Margin="0,0,8,0" />
+                    <local:MyTextBox x:Name="TextCenterX" Height="28" Width="90" Margin="0,0,12,0" Text="0" />
+                    <TextBlock Text="中心 Z" VerticalAlignment="Center" Margin="0,0,8,0" />
+                    <local:MyTextBox x:Name="TextCenterZ" Height="28" Width="90" Margin="0,0,12,0" Text="0" />
+                    <local:MyButton x:Name="BtnCenterLoad" Height="28" Padding="14,0,14,0" Margin="0,0,12,0" Text="按中心重新加载" />
+                    <local:MyButton x:Name="BtnCubiomes" Height="28" Padding="14,0,14,0" Margin="0,0,12,0" Text="无限地图（Cubiomes）" ColorType="Highlight" />
+                    <TextBlock Text="（也可以直接双击地图任意位置，以该点为中新加载一大块）" VerticalAlignment="Center" FontSize="12"
+                               Foreground="{DynamicResource ColorBrushGray3}" />
+                </StackPanel>
+                <WrapPanel x:Name="PanFilters" Margin="0,12,0,0" />
+            </StackPanel>
+        </local:MyCard>
+
+        <local:MyCard Grid.Row="1" Margin="0,0,0,2" Title="地图" VerticalAlignment="Stretch">
+            <Grid Margin="14,44,14,14">
+                <Grid.RowDefinitions>
+                    <RowDefinition />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition />
+                        <ColumnDefinition Width="12" />
+                        <ColumnDefinition Width="250" />
+                    </Grid.ColumnDefinitions>
+
+                    <Border ClipToBounds="True" Background="White" BorderThickness="1"
+                            BorderBrush="{DynamicResource ColorBrushGray6}" CornerRadius="8">
+                        <Grid x:Name="PanMap" ClipToBounds="True" Background="{DynamicResource ColorBrush8}">
+                            <Grid x:Name="MapContent" RenderTransformOrigin="0,0" HorizontalAlignment="Left" VerticalAlignment="Top">
+                                <Grid.RenderTransform>
+                                    <TransformGroup>
+                                        <ScaleTransform x:Name="MapScale" ScaleX="1" ScaleY="1" />
+                                        <TranslateTransform x:Name="MapOffset" X="0" Y="0" />
+                                    </TransformGroup>
+                                </Grid.RenderTransform>
+                                <Image x:Name="ImgMap" Stretch="None" RenderOptions.BitmapScalingMode="NearestNeighbor" />
+                                <Canvas x:Name="PanMarkers" />
+                            </Grid>
+                        </Grid>
+                    </Border>
+
+                    <Border Grid.Column="2" Background="White" BorderThickness="1"
+                            BorderBrush="{DynamicResource ColorBrushGray6}" CornerRadius="8">
+                        <Grid Margin="10">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition />
+                            </Grid.RowDefinitions>
+                            <TextBlock Text="结构列表" FontWeight="Bold" Margin="0,0,0,8" FontSize="13" />
+                            <ListBox x:Name="ListStructures" Grid.Row="1" Background="Transparent" BorderThickness="0"
+                                     FontSize="12" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                <ListBox.ItemContainerStyle>
+                                    <Style TargetType="ListBoxItem">
+                                        <Setter Property="Height" Value="28" />
+                                        <Setter Property="Padding" Value="2,0" />
+                                        <Setter Property="Background" Value="Transparent" />
+                                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                    </Style>
+                                </ListBox.ItemContainerStyle>
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <Rectangle Width="9" Height="9" Fill="{Binding ColorBrush}" RadiusX="2" RadiusY="2" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                            <TextBlock Text="{Binding Display}" VerticalAlignment="Center" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </Grid>
+                    </Border>
+                </Grid>
+
+                <Grid Grid.Row="1" Margin="0,8,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock x:Name="LabStatus" VerticalAlignment="Center" FontSize="12" TextTrimming="CharacterEllipsis"
+                               Foreground="{DynamicResource ColorBrushGray3}" Text="输入种子后点击「生成地图」" />
+                    <local:MyButton Grid.Column="1" x:Name="BtnZoomOut" Height="26" Padding="12,0,12,0" Margin="8,0,0,0" Text="缩小" />
+                    <local:MyButton Grid.Column="2" x:Name="BtnZoomIn" Height="26" Padding="12,0,12,0" Margin="8,0,0,0" Text="放大" />
+                    <local:MyButton Grid.Column="3" x:Name="BtnReset" Height="26" Padding="12,0,12,0" Margin="8,0,0,0" Text="复位" />
+                            <local:MyButton Grid.Column="4" x:Name="BtnCopyTp" Height="26" Padding="12,0,12,0" Margin="8,0,0,0" Text="复制传送指令" />
+                </Grid>
+            </Grid>
+        </local:MyCard>
+    </Grid>
+</local:MyPageRight>

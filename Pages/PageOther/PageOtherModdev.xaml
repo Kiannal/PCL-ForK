@@ -1,0 +1,102 @@
+<local:MyPageRight
+    x:Class="PageOtherModdev"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="clr-namespace:PCL">
+
+    <local:MyScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" x:Name="PanBack">
+        <StackPanel Margin="25,10,25,20" Grid.IsSharedSizeScope="True">
+
+            <local:MyCard Margin="0,0,0,15" Title="项目信息">
+                <Grid Margin="22,46,22,18">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="110" />
+                        <ColumnDefinition Width="1*" />
+                        <ColumnDefinition Width="22" />
+                        <ColumnDefinition Width="110" />
+                        <ColumnDefinition Width="1*" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="38" />
+                        <RowDefinition Height="38" />
+                        <RowDefinition Height="38" />
+                        <RowDefinition Height="38" />
+                        <RowDefinition Height="38" />
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" Text="模组名称" VerticalAlignment="Center" />
+                    <local:MyTextBox Grid.Row="0" Grid.Column="1" x:Name="TextModName" Text="示例模组" Height="30" VerticalAlignment="Center" />
+                    <TextBlock Grid.Row="0" Grid.Column="3" Text="ModID" VerticalAlignment="Center" />
+                    <local:MyTextBox Grid.Row="0" Grid.Column="4" x:Name="TextModId" Text="examplemod" Height="30" VerticalAlignment="Center" />
+
+                    <TextBlock Grid.Row="1" Text="包名" VerticalAlignment="Center" />
+                    <local:MyTextBox Grid.Row="1" Grid.Column="1" x:Name="TextPackage" Text="com.example.examplemod" Height="30" VerticalAlignment="Center" />
+                    <TextBlock Grid.Row="1" Grid.Column="3" Text="版本" VerticalAlignment="Center" />
+                    <local:MyTextBox Grid.Row="1" Grid.Column="4" x:Name="TextModVersion" Text="1.0.0" Height="30" VerticalAlignment="Center" />
+
+                    <TextBlock Grid.Row="2" Text="作者" VerticalAlignment="Center" />
+                    <local:MyTextBox Grid.Row="2" Grid.Column="1" x:Name="TextAuthor" Text="开发者" Height="30" VerticalAlignment="Center" />
+                    <TextBlock Grid.Row="2" Grid.Column="3" Text="加载器" VerticalAlignment="Center" />
+                    <local:MyComboBox Grid.Row="2" Grid.Column="4" x:Name="ComboLoader" Height="30" VerticalAlignment="Center">
+                        <local:MyComboBoxItem Content="Forge 1.20.1" Tag="forge" IsSelected="True" />
+                        <local:MyComboBoxItem Content="NeoForge 1.21.1" Tag="neoforge" />
+                        <local:MyComboBoxItem Content="Fabric 1.20.1" Tag="fabric" />
+                    </local:MyComboBox>
+
+                    <TextBlock Grid.Row="3" Text="游戏版本" VerticalAlignment="Center" />
+                    <local:MyTextBox Grid.Row="3" Grid.Column="1" x:Name="TextMcVersion" Text="1.20.1" Height="30" VerticalAlignment="Center" />
+                    <TextBlock Grid.Row="3" Grid.Column="3" Text="项目位置" VerticalAlignment="Center" />
+                    <local:MyTextBox Grid.Row="3" Grid.Column="4" x:Name="TextFolder" Height="30" VerticalAlignment="Center" />
+
+                    <local:MyButton Grid.Row="4" Grid.Column="1" x:Name="BtnBrowse" Text="选择项目位置" MinWidth="120" Padding="13,0" HorizontalAlignment="Left" VerticalAlignment="Center" />
+                    <TextBlock Grid.Row="4" Grid.Column="4" x:Name="LabFormStatus" FontSize="12" VerticalAlignment="Center" TextWrapping="Wrap"
+                               Foreground="{DynamicResource ColorBrushGray3}" />
+                </Grid>
+            </local:MyCard>
+
+            <local:MyCard Margin="0,0,0,15" Title="创建项目">
+                <StackPanel Margin="22,46,22,18">
+                    <WrapPanel>
+                        <local:MyButton x:Name="BtnGenerate" Text="生成 Gradle 项目" MinWidth="150" Padding="13,0" Margin="0,0,14,0" ColorType="Highlight" />
+                        <local:MyButton x:Name="BtnOpenFolder" Text="打开项目文件夹" MinWidth="130" Padding="13,0" Margin="0,0,14,0" />
+                        <local:MyButton x:Name="BtnOpenCmd" Text="打开命令行" MinWidth="110" Padding="13,0" Margin="0,0,14,0" />
+                        <local:MyButton x:Name="BtnCopyCmd" Text="复制构建命令" MinWidth="120" Padding="13,0" />
+                    </WrapPanel>
+                    <TextBlock x:Name="LabOutput" Margin="0,12,0,0" FontSize="12.5" TextWrapping="Wrap" LineHeight="20"
+                               Foreground="{DynamicResource ColorBrushGray2}"
+                               Text="会生成 build.gradle、gradle.properties、设置文件、主类、mods.toml / fabric.mod.json 与示例物品。生成后需安装 JDK（Forge/Fabric 17，NeoForge 21）并导入 IDE。" />
+                </StackPanel>
+            </local:MyCard>
+
+            <local:MyCard Margin="0,0,0,15" Title="开发环境检测">
+                <StackPanel Margin="22,46,22,18">
+                    <WrapPanel>
+                        <local:MyButton x:Name="BtnCheckEnv" Text="检测 Java / Gradle / Git" MinWidth="190" Padding="13,0" Margin="0,0,14,0" ColorType="Highlight" />
+                        <local:MyButton x:Name="BtnOpenJava" Text="下载 JDK" MinWidth="110" Padding="13,0" Margin="0,0,14,0" />
+                        <local:MyButton x:Name="BtnOpenGradle" Text="下载 Gradle" MinWidth="110" Padding="13,0" Margin="0,0,14,0" />
+                        <local:MyButton x:Name="BtnOpenIde" Text="下载 IntelliJ IDEA" MinWidth="150" Padding="13,0" />
+                    </WrapPanel>
+                    <TextBlock x:Name="LabEnv" Margin="0,12,0,0" FontSize="12.5" TextWrapping="Wrap" LineHeight="20"
+                               Foreground="{DynamicResource ColorBrushGray2}" Text="点击检测，查看当前可用的开发环境。" />
+                </StackPanel>
+            </local:MyCard>
+
+            <local:MyCard Margin="0,0,0,5" Title="常用资源">
+                <StackPanel Margin="22,46,22,18">
+                    <WrapPanel>
+                        <local:MyButton x:Name="BtnDocForge" Text="Forge MDK" MinWidth="120" Padding="13,0" Margin="0,0,14,10" />
+                        <local:MyButton x:Name="BtnDocNeoForge" Text="NeoForge MDK" MinWidth="130" Padding="13,0" Margin="0,0,14,10" />
+                        <local:MyButton x:Name="BtnDocFabric" Text="Fabric 模板" MinWidth="120" Padding="13,0" Margin="0,0,14,10" />
+                        <local:MyButton x:Name="BtnDocParchment" Text="Parchment 映射" MinWidth="130" Padding="13,0" Margin="0,0,14,10" />
+                        <local:MyButton x:Name="BtnDocMixin" Text="Mixin 文档" MinWidth="120" Padding="13,0" Margin="0,0,14,10" />
+                        <local:MyButton x:Name="BtnDocWiki" Text="Minecraft Wiki" MinWidth="130" Padding="13,0" Margin="0,0,14,10" />
+                        <local:MyButton x:Name="BtnDocMappings" Text="官方映射" MinWidth="110" Padding="13,0" Margin="0,0,14,10" />
+                    </WrapPanel>
+                    <TextBlock Margin="0,4,0,0" FontSize="12" TextWrapping="Wrap" Foreground="{DynamicResource ColorBrushGray3}"
+                               Text="常用开发流程：新建项目 → 用 IntelliJ IDEA 打开项目文件夹 → 等待 Gradle 同步 → 运行 runClient 调试；发布前执行 build，产物在 build/libs。" />
+                </StackPanel>
+            </local:MyCard>
+
+        </StackPanel>
+    </local:MyScrollViewer>
+</local:MyPageRight>
