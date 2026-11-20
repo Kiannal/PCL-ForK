@@ -1,0 +1,16 @@
+bin/
+obj/
+.vs/
+*.user
+*.suo
+*.cache
+*.pdb
+*.exe
+*.dll
+!packages/**/*.dll
+packages/
+*.log
+
+dist/
+*.zip
+

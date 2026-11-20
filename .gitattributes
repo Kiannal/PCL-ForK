@@ -1,0 +1,8 @@
+* text=auto eol=crlf
+*.vb text
+*.xaml text
+*.vbproj text
+*.exe binary
+*.png binary
+*.ico binary
+*.dll binary

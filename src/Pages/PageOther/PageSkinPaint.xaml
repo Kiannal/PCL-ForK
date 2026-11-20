@@ -1,0 +1,32 @@
+<local:MyPageRight x:Class="PageSkinPaint"
+                    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:local="clr-namespace:PCL">
+    <local:MyScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="25,20,25,30">
+            <StackPanel Margin="4,0,4,14">
+                <TextBlock Text="皮肤绘制" FontSize="24" FontWeight="SemiBold" Foreground="{DynamicResource ColorBrush1}" />
+                <TextBlock Text="在白色人物上直接涂色，生成标准 64×64 皮肤" FontSize="12.5" Margin="0,4,0,0" Foreground="{DynamicResource ColorBrushGray3}" />
+            </StackPanel>
+            <local:MyCard Title="画布" Margin="0,0,0,15">
+                <StackPanel Margin="22,44,22,20">
+                    <TextBlock TextWrapping="Wrap" Foreground="{StaticResource ColorBrushGray3}"
+                               Text="白色人物为初始画布：左键在人物上绘制，橡皮擦除；画完点击「生成皮肤」即可得到可用的 64×64 皮肤图片。" />
+                    <WrapPanel Margin="0,14,0,0" x:Name="PanToolbar" />
+                    <Grid Margin="0,16,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Canvas x:Name="PanDoll" Width="248" Height="384" HorizontalAlignment="Left" VerticalAlignment="Top" Background="Transparent" />
+                        <StackPanel Grid.Column="1" Margin="24,0,0,0" Width="260">
+                            <TextBlock x:Name="LabTip" Text="正面视图" FontSize="13" Foreground="{StaticResource ColorBrushGray3}" />
+                            <WrapPanel Margin="0,10,0,0" x:Name="PanPalette" />
+                            
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+            </local:MyCard>
+        </StackPanel>
+    </local:MyScrollViewer>
+</local:MyPageRight>

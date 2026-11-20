@@ -1,0 +1,28 @@
+<local:MyPageRight
+xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+xmlns:local="clr-namespace:PCL"
+xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+mc:Ignorable="d" x:Class="PageDownloadUpload"
+PanScroll="Content">
+<ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+<StackPanel Margin="25">
+<local:MyCard Title="上传资源到 PCL-ForK" Margin="0,0,0,15">
+<StackPanel Margin="22,44,22,16">
+<TextBlock Text="选一种类型，然后选择要上传的包。上传后其他玩家可在对应下载页看到，来源显示 PCL-ForK。" FontSize="12.5" Opacity="0.65" TextWrapping="Wrap" />
+<WrapPanel x:Name="PanTypes" Margin="0,14,0,0" />
+</StackPanel>
+</local:MyCard>
+<local:MyCard Title="资源信息" Margin="0,0,0,15">
+<StackPanel Margin="22,44,22,16">
+<TextBlock Text="名称（留空则用文件名）" FontSize="12" Opacity="0.65" Margin="0,0,0,6" />
+<local:MyTextBox x:Name="TextName" Height="32" HintText="例如：Complementary Shaders 重制版" />
+<TextBlock Text="简介" FontSize="12" Opacity="0.65" Margin="0,12,0,6" />
+<local:MyTextBox x:Name="TextDesc" Height="92" AcceptsReturn="True" TextWrapping="Wrap" HintText="写点介绍，别人下载时能看到" />
+</StackPanel>
+</local:MyCard>
+<TextBlock x:Name="LabState" FontSize="12.5" TextWrapping="Wrap" Margin="4,0,4,10" Foreground="#4A5361" />
+</StackPanel>
+</ScrollViewer>
+</local:MyPageRight>

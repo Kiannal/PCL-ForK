@@ -1,0 +1,15 @@
+<local:MyPageLeft x:Class="PageExperimentLeft"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:PCL" AnimatedControl="PanItem">
+    <StackPanel Margin="0,12,0,0" Name="PanItem">
+        <local:MyListItem x:Name="ItemScreenshot" IsScaleAnimationEnabled="False" Checked="True" Type="RadioBox" Tag="0" MinPaddingRight="35" Height="36"
+                          VerticalAlignment="Top" Title="截屏预览" LogoScale="0.95" Logo="M0 96h896v512H0z M128 192h640v320H128z M192 320l160 160 96-96 128 128H256z" />
+        <local:MyListItem x:Name="ItemLitematic" IsScaleAnimationEnabled="False" Type="RadioBox" Tag="6" MinPaddingRight="35" Height="36"
+                          VerticalAlignment="Top" Title="投影查看" LogoScale="0.95" Logo="M12 2l9 4.9v10.2L12 22l-9-4.9V6.9L12 2zm0 2.3L5 8v8l7 3.9V4.3z" />
+        <local:MyListItem x:Name="ItemSkinPaint" IsScaleAnimationEnabled="False" Type="RadioBox" Tag="8" MinPaddingRight="35" Height="36"
+                          VerticalAlignment="Top" Title="皮肤绘制" LogoScale="0.95" Logo="M14 2l4 3-1 3-1-1v11H4V7L3 8 2 5l4-3 4 2 4-2z" />
+        <local:MyListItem x:Name="ItemModdev" IsScaleAnimationEnabled="False" Type="RadioBox" Tag="7" MinPaddingRight="35" Height="36"
+                          VerticalAlignment="Top" Title="Mod 开发" LogoScale="0.95" Logo="M15.5 2.5l6 3.4v8.2l-6 3.4-6-3.4V5.9l6-3.4z" />
+    </StackPanel>
+</local:MyPageLeft>

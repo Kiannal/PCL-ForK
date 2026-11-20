@@ -1,0 +1,29 @@
+<local:MyPageRight
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="clr-namespace:PCL"
+    x:Class="PageInstancePack"
+    PanScroll="PanBack">
+    <local:MyScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" x:Name="PanBack">
+        <StackPanel Margin="25,10,25,10">
+            <local:MyCard Margin="0,15,0,15" x:Name="CardMain" Title="资源包">
+                <StackPanel Margin="20,44,20,16">
+                    <WrapPanel>
+                        <local:MyButton x:Name="BtnInstall" Text="从文件安装" MinWidth="110" Padding="13,0" Margin="0,0,12,8" ColorType="Highlight" />
+                        <local:MyButton x:Name="BtnOpenFolder" Text="打开文件夹" MinWidth="110" Padding="13,0" Margin="0,0,12,8" />
+                        <local:MyButton x:Name="BtnRefreshList" Text="刷新" MinWidth="100" Padding="13,0" Margin="0,0,12,8" />
+                        <local:MyButton x:Name="BtnDownload" Text="下载新包" MinWidth="110" Padding="13,0" Margin="0,0,12,8" ColorType="Highlight" />
+                    </WrapPanel>
+                    <TextBlock x:Name="LabHint" FontSize="12" TextWrapping="Wrap" Foreground="{DynamicResource ColorBrushGray3}" Margin="0,4,0,0" />
+                    <local:MySearchBox x:Name="SearchBox" HintText="搜索名称" Margin="0,10,0,0" />
+                    <StackPanel Orientation="Horizontal" Margin="0,10,0,4">
+                        <local:MyRadioButton x:Name="BtnFilterAll" Text="全部" Tag="0" Checked="True" Margin="2,0" ColorType="Highlight" />
+                        <local:MyRadioButton x:Name="BtnFilterEnabled" Text="已启用" Tag="1" Margin="2,0" ColorType="Highlight" />
+                        <local:MyRadioButton x:Name="BtnFilterDisabled" Text="已禁用" Tag="2" Margin="2,0" ColorType="Highlight" />
+                    </StackPanel>
+                    <StackPanel x:Name="PanPacks" Margin="0,6,0,0" />
+                </StackPanel>
+            </local:MyCard>
+        </StackPanel>
+    </local:MyScrollViewer>
+</local:MyPageRight>

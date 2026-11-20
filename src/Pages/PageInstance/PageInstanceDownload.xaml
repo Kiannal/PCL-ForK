@@ -1,0 +1,33 @@
+<local:MyPageRight x:Class="PageInstanceDownload"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:PCL"
+             mc:Ignorable="d"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             d:DesignWidth="900" d:DesignHeight="600">
+    <Grid Margin="25,12,25,18">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <Grid Grid.Row="0" Margin="2,0,2,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBlock x:Name="LabTip" Grid.Column="0" Text="正在读取云端存档……" TextWrapping="Wrap"
+                       FontSize="13" VerticalAlignment="Center"
+                       Foreground="{DynamicResource ColorBrushGray3}" />
+            <local:MyIconButton x:Name="BtnRefresh" Grid.Column="1" Width="34" Height="34"
+                                VerticalAlignment="Center" ToolTip="刷新列表"
+                                Logo="M512 838c-80 0-153-29-210-77l75-76c12-11 26-22 26-37a27 27 0 0 0-27-27H104c-27 0-27 24-27 27v272a27 27 0 0 0 27 27c15 0 28-17 43-31l78-78c76 67 177 109 287 109 222 0 404-166 431-381H834C808 721 674 838 512 838zM920 77c-15 0-28 17-43 31L800 186C723 118 623 77 513 77 291 77 108 243 82 457h110C218 303 351 186 513 186c80 0 153 29 210 77l-75 76c-12 11-26 22-26 37a27 27 0 0 0 27 27h272c27 0 27-24 27-27V104a27 27 0 0 0-27-27z" />
+        </Grid>
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel x:Name="PanList" Margin="0,2,0,2" />
+        </ScrollViewer>
+        <TextBlock Grid.Row="2" x:Name="LabStatus" Margin="2,10,2,0" TextWrapping="Wrap"
+                   FontSize="12.5" Foreground="{DynamicResource ColorBrushGray3}" />
+    </Grid>
+</local:MyPageRight>

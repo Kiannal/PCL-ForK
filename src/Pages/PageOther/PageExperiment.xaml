@@ -1,0 +1,21 @@
+<local:MyPageRight x:Class="PageExperiment"
+                    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:local="clr-namespace:PCL">
+    <local:MyScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="25,25,25,30">
+                        <local:MyCard Title="跨世界截屏预览" Margin="0,0,0,15">
+                <StackPanel Margin="22,44,22,20">
+                    <TextBlock TextWrapping="Wrap" Foreground="{StaticResource ColorBrushGray3}" Text="汇总所有实例与世界的截图，点击图片可直接在启动器内查看大图。" />
+                    <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                        <local:MyButton x:Name="BtnRefreshShots" Text="刷新截屏" Height="30" MinWidth="110" Padding="13,0" Margin="0,0,10,0" ColorType="Highlight" />
+                        <TextBlock x:Name="LabShotCount" VerticalAlignment="Center" Margin="14,0,0,0" FontSize="12" Foreground="{StaticResource ColorBrushGray3}" />
+                    </StackPanel>
+                </StackPanel>
+            </local:MyCard>
+            <WrapPanel x:Name="PanShots" />
+            <TextBlock x:Name="LabEmpty" Text="还没有找到任何截图。进入游戏按 F2 截图后会显示在这里。" Foreground="{StaticResource ColorBrushGray3}"
+                       Margin="4,10,0,0" Visibility="Collapsed" />
+        </StackPanel>
+    </local:MyScrollViewer>
+</local:MyPageRight>
