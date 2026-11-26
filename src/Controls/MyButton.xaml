@@ -14,7 +14,7 @@
                 </TextBlock.RenderTransform>
             </TextBlock>
         </Border>
-        <Border x:Name="FocusRing" CornerRadius="11" BorderThickness="2" Margin="-3"
+        <Border x:Name="FocusRing" CornerRadius="{Binding CornerRadius, ElementName=PanFore}" BorderThickness="2" Margin="-3"
                 BorderBrush="{DynamicResource ColorBrush2}" Visibility="Collapsed" IsHitTestVisible="False" />
     </Grid>
 </Border>
