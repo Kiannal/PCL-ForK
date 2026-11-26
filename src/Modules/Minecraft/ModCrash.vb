@@ -876,12 +876,16 @@ NextStack:
                 End If
             End Sub))
             Case 3
-            Try
-                Dim Fix As New FrmCrashFix(Detail)
-                Fix.ShowDialog()
-            Catch exFix As Exception
-                MyMsgBox("AI 修复窗口打开失败：" & exFix.Message, "错误", IsWarn:=True)
-            End Try
+            '窗口必须在 UI 线程创建，崩溃分析可能跑在后台线程
+            RunInUi(Sub()
+                        Try
+                            Dim Fix As New FrmCrashFix(Detail)
+                            Fix.ShowDialog()
+                        Catch exFix As Exception
+                            Logger.Warn(exFix, "AI 修复窗口打开失败")
+                            MyMsgBox("AI 修复窗口打开失败：" & exFix.Message, "错误", IsWarn:=True)
+                        End Try
+                    End Sub)
             Return
         Case 3
                 '弹窗选择：导出错误报告
