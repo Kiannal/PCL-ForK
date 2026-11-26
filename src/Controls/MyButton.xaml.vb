@@ -1,4 +1,4 @@
-﻿Imports System.Windows.Markup
+Imports System.Windows.Markup
 
 <ContentProperty("Inlines")>
 Public Class MyButton
@@ -158,7 +158,6 @@ Public Class MyButton
     End Sub
     Private Sub Button_MouseEnter() Handles Me.MouseEnter
         AniStart(AaColor(PanFore, BackgroundProperty, If(_ColorType = ColorState.Red, "ColorBrushRedBack", "ColorBrush7"), AnimationColorIn), "MyButton Background " & Uuid)
-        RefreshFocusRing()
     End Sub
     Private Sub Button_MouseUp() Handles Me.MouseLeftButtonUp
         If Not IsMouseDown Then Return
@@ -172,15 +171,6 @@ Public Class MyButton
         If Not IsMouseDown Then Return
         IsMouseDown = False
         AniStart(AaScaleTransform(PanFore, 1 - CType(PanFore.RenderTransform, ScaleTransform).ScaleX, 800,, New AniEaseOutFluent(AniEasePower.Strong)), "MyButton Scale " & Uuid)
-        RefreshFocusRing()
-    End Sub
-    '键盘焦点环：键盘导航聚焦时出现，鼠标悬停时不显示
-    Private Sub Button_IsKeyboardFocusWithinChanged(sender As Object, e As DependencyPropertyChangedEventArgs) Handles Me.IsKeyboardFocusWithinChanged
-        RefreshFocusRing()
-    End Sub
-    Private Sub RefreshFocusRing()
-        If FocusRing Is Nothing Then Return
-        FocusRing.Visibility = If(IsKeyboardFocusWithin AndAlso Not IsMouseOver, Visibility.Visible, Visibility.Collapsed)
     End Sub
 
 End Class

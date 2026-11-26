@@ -29,10 +29,6 @@ Public Class MyRadioButton
         End Set
     End Property
 
-    ''' <summary>
-    ''' 选中时不绘制自身背景，交给外部滑动指示器统一绘制。
-    ''' </summary>
-    Public Property HideCheckedBackground As Boolean = False
     Private _Checked As Boolean = False '是否选中
     Public Property Checked As Boolean
         Get
@@ -182,12 +178,7 @@ Public Class MyRadioButton
                                          AaColor(ShapeLogo, Shapes.Path.FillProperty, "ColorBrush3", AnimationTimeOfCheck),
                                          AaColor(LabText, TextBlock.ForegroundProperty, "ColorBrush3", AnimationTimeOfCheck)
                                     }, "MyRadioButton Checked " & Uuid)
-                            If HideCheckedBackground Then
-                                '选中背景交给外部滑动指示器绘制，自身保持透明
-                                AniStart(AaColor(Me, BackgroundProperty, ColorSemiTransparent - Background, AnimationTimeOfCheck), "MyRadioButton Color " & Uuid)
-                            Else
-                                AniStart(AaColor(Me, BackgroundProperty, New MyColor(255, 255, 255) - Background, AnimationTimeOfCheck), "MyRadioButton Color " & Uuid)
-                            End If
+                            AniStart(AaColor(Me, BackgroundProperty, New MyColor(255, 255, 255) - Background, AnimationTimeOfCheck), "MyRadioButton Color " & Uuid)
                         ElseIf IsMouseDown Then
                             '按下
                             AniStart(AaColor(Me, BackgroundProperty, New MyColor(120, Color8) - Background, 60), "MyRadioButton Color " & Uuid)
