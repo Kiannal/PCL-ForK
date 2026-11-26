@@ -172,5 +172,14 @@ Public Class MyButton
         IsMouseDown = False
         AniStart(AaScaleTransform(PanFore, 1 - CType(PanFore.RenderTransform, ScaleTransform).ScaleX, 800,, New AniEaseOutFluent(AniEasePower.Strong)), "MyButton Scale " & Uuid)
     End Sub
+    '键盘焦点环：只在键盘导航时出现，鼠标点击不显示
+    Private Sub Button_IsKeyboardFocusedChanged(sender As Object, e As DependencyPropertyChangedEventArgs) Handles Me.IsKeyboardFocusedChanged
+        If FocusRing Is Nothing Then Return
+        FocusRing.Visibility = If(IsKeyboardFocused, Visibility.Visible, Visibility.Collapsed)
+    End Sub
+    Private Sub Button_IsKeyboardFocusWithinChanged(sender As Object, e As DependencyPropertyChangedEventArgs) Handles Me.IsKeyboardFocusWithinChanged
+        If FocusRing Is Nothing Then Return
+        FocusRing.Visibility = If(IsKeyboardFocusWithin AndAlso Not IsMouseOver, Visibility.Visible, Visibility.Collapsed)
+    End Sub
 
 End Class

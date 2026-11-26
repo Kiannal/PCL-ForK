@@ -416,7 +416,14 @@
                     </Trigger>
                 </Style.Triggers>
             </Style>
+            <Style TargetType="Calendar">
+                <Setter Property="Background" Value="{DynamicResource ColorBrush8}" />
+            </Style>
             <Style TargetType="ToggleButton">
+                <Setter Property="MinWidth" Value="15" />
+                <Setter Property="MinHeight" Value="8" />
+                <Setter Property="Padding" Value="0" />
+                <Setter Property="Background" Value="Transparent" />
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="ToggleButton">
@@ -543,11 +550,11 @@
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="ContextMenu">
-                            <Border BorderBrush="{DynamicResource ColorBrushGray7}" BorderThickness="1" CornerRadius="8" Background="{DynamicResource ColorBrushCard}" Margin="0,0,6,6" SnapsToDevicePixels="True">
+                            <Border BorderBrush="{DynamicResource ColorBrushGray7}" BorderThickness="1" CornerRadius="3" Background="{DynamicResource ColorBrushCard}" Margin="0,0,4,4" SnapsToDevicePixels="True">
                                 <Border.Effect>
                                     <DropShadowEffect Opacity="0.16" BlurRadius="12" ShadowDepth="4" Color="#000000" />
                                 </Border.Effect>
-                                <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Cycle" Margin="4,5"/>
+                                <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Cycle" Margin="0"/>
                             </Border>
                         </ControlTemplate>
                     </Setter.Value>
@@ -559,7 +566,7 @@
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="MenuItem">
-                            <Border Name="PanBack" Padding="{TemplateBinding Padding}" Background="{TemplateBinding Background}" SnapsToDevicePixels="True" Height="32" CornerRadius="5" Margin="0,1">
+                            <Border Name="PanBack" Padding="{TemplateBinding Padding}" Background="{TemplateBinding Background}" SnapsToDevicePixels="True" Height="26" CornerRadius="4" Margin="0,1" MinWidth="0">
                                 <Grid SnapsToDevicePixels="False" UseLayoutRounding="False">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto" SharedSizeGroup="Icon"/>
@@ -567,8 +574,8 @@
                                         <!--  <ColumnDefinition Width="Auto" SharedSizeGroup="Shortcut"/>
                                     <ColumnDefinition Width="13"/>  -->
                                     </Grid.ColumnDefinitions>
-                                    <Path Name="Icon" VerticalAlignment="Center" Stretch="Uniform" Margin="14,0" Fill="{TemplateBinding Foreground}" Height="12" Width="15" />
-                                    <TextBlock Name="HeaderHost" Grid.Column="1" Text="{TemplateBinding Header}" Foreground="{TemplateBinding Foreground}" Margin="0,0,16,0" VerticalAlignment="Center" Height="16" />
+                                    <Path Name="Icon" VerticalAlignment="Center" Stretch="Uniform" Margin="12,0" Fill="{TemplateBinding Foreground}" Height="12" Width="15" />
+                                    <TextBlock Name="HeaderHost" Grid.Column="1" Text="{TemplateBinding Header}" Foreground="{TemplateBinding Foreground}" Margin="0,0,40,0" VerticalAlignment="Center" Height="14" TextTrimming="CharacterEllipsis" />
                                     <!--  <TextBlock x:Name="InputGestureText" Grid.Column="2" Text="{TemplateBinding InputGestureText}" Margin="5,2,0,2" DockPanel.Dock="Right" /> -->
                                 </Grid>
                             </Border>
