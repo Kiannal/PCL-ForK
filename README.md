@@ -1,4 +1,4 @@
-# PCL-ForK
+﻿# PCL-ForK
 
 基于 [PCL2](https://github.com/Meloong-Git/PCL) 二次开发的 Minecraft 启动器分支，VB.NET / WPF。
 
@@ -38,10 +38,10 @@ dotnet msbuild "Plain Craft Launcher 2\Plain Craft Launcher 2.vbproj" -p:Configu
 
 ## 说明
 
-- 本仓库为 Fork，原项目版权归 PCL2 作者所有，遵循 MIT 协议
+- 本仓库为 Fork，原项目版权归 PCL2 作者所有，遵循仓库根目录的《PCL 分发有限许可》与《PCL 存储库合理使用指南》
 - 仓库内的密钥、用户名、路径均已替换为占位符，使用前请填写自己的 DeepSeek Key
 - `dist/PCL-ForK.exe` 为构建产物，未做代码签名
 
 ## 协议
 
-MIT
+《PCL 分发有限许可》与《PCL 存储库合理使用指南》，全文见 [LICENSE](LICENSE)。

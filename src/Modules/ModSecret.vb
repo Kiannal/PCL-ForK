@@ -264,12 +264,11 @@ Friend Module ModSecret
     Friend Sub ThemeCheckAll(EffectSetup As Boolean)
         Try
             If FrmSetupUI Is Nothing Then Return
+            '只保留默认主题，其余主题不展示，避免出现与赞助解锁类似的锁定表现
             For Each Control In FrmSetupUI.PanLauncherTheme.Children
                 If TypeOf Control Is MyRadioBox Then
                     Dim ThemeRadio As MyRadioBox = CType(Control, MyRadioBox)
-                    Dim IsDefault As Boolean = (ThemeRadio Is FrmSetupUI.RadioLauncherTheme0)
-                    ThemeRadio.IsEnabled = IsDefault
-                    ThemeRadio.Opacity = If(IsDefault, 1, 0.35)
+                    ThemeRadio.Visibility = If(ThemeRadio Is FrmSetupUI.RadioLauncherTheme0, Visibility.Visible, Visibility.Collapsed)
                 End If
             Next
             FrmSetupUI.RadioLauncherTheme5Gray.Visibility = Visibility.Collapsed
@@ -678,7 +677,7 @@ Friend Module ModSecret
 
 #End Region
 
-#Region "赞助等级"
+#Region "身份标识"
 
     Public ReadOnly Property CurrentRank As DonationRank
         Get
