@@ -1,4 +1,4 @@
-Imports System.ComponentModel
+﻿Imports System.ComponentModel
 Imports System.Windows.Interop
 
 Public Class FormMain
@@ -376,6 +376,7 @@ Public Class FormMain
         '读取设置
         ModWallpaperDefaults.ApplyDefaultIfUnset()
         UpdateBackgroundAndTitleBar()
+        UpdateTabSelectionIndicator(False)
         PageSetupUI.HiddenRefresh()
         PageSetupUI.BackgroundRefresh(False, True)
         If Settings.Get(Of Boolean)("UiBackgroundWeSync") Then ModWallpaperEngine.WeSync(True)
@@ -779,6 +780,36 @@ Public Class FormMain
     Public Shared Sub UpdateBackgroundAndTitleBar(Value) '从设置更新
         If FrmMain Is Nothing OrElse Not FrmMain.IsLoaded Then Return
         FrmMain.UpdateBackgroundAndTitleBar()
+    End Sub
+    ''' <summary>
+    ''' 把顶部页签的选中指示器移到当前选中项下方。
+    ''' </summary>
+    Public Sub UpdateTabSelectionIndicator(Optional Animate As Boolean = False)
+        Try
+            If PanTitleTabs Is Nothing OrElse TabSelectionIndicator Is Nothing Then Return
+            Dim Target As MyRadioButton = Nothing
+            For Each Child In PanTitleTabs.Children
+                Dim Tab As MyRadioButton = TryCast(Child, MyRadioButton)
+                If Tab IsNot Nothing AndAlso Tab.Checked Then
+                    Target = Tab
+                    Exit For
+                End If
+            Next
+            If Target Is Nothing OrElse Target.ActualWidth <= 0 Then Return
+            Dim Offset As Point = Target.TranslatePoint(New Point(0, 0), PanTitleSelect)
+            TabSelectionIndicator.Width = Target.ActualWidth
+            Dim Transform As TranslateTransform = TryCast(TabSelectionIndicator.RenderTransform, TranslateTransform)
+            If Transform Is Nothing Then Return
+            Dim Delta As Double = Offset.X - Transform.X
+            If Math.Abs(Delta) < 0.1 Then Return
+            If Not Animate OrElse AniControlEnabled <> 0 Then
+                Transform.X = Offset.X
+                Return
+            End If
+            AniStart(AaTranslateX(TabSelectionIndicator, Delta, 240, 0, New AniEaseOutFluent(AniEasePower.Weak)), "TitleBar Tab Indicator")
+        Catch ex As Exception
+            Logger.Warn(ex, "刷新页签指示器失败")
+        End Try
     End Sub
     Public Sub UpdateBackgroundAndTitleBar()
         Logger.Info("从设置更新背景图片与标题栏样式")
@@ -1648,7 +1679,8 @@ Public Class FormMain
             '切换到主页面
             PageChangeExit()
             IsChangingPage = True '防止下面的勾选直接触发了 PageChangeActual
-            CType(PanTitleSelect.Children(Stack), MyRadioButton).SetChecked(True, True, PageNameGet(PageCurrent) = "")
+            CType(PanTitleTabs.Children(Stack), MyRadioButton).SetChecked(True, True, PageNameGet(PageCurrent) = "")
+            UpdateTabSelectionIndicator(True)
             IsChangingPage = False
             Select Case Stack.Page
                 Case PageType.Download
