@@ -1,5 +1,7 @@
-Public Class PageInstanceLeft
+﻿Public Class PageInstanceLeft
     Implements IRefreshable
+    Public FrmInstanceUpload As PageInstanceUpload
+    Public FrmInstanceDownload As PageInstanceDownload
 
     ''' <summary>
     ''' 当前显示设置的 MC 版本。
@@ -30,7 +32,7 @@ Public Class PageInstanceLeft
     ''' <summary>
     ''' 勾选事件改变页面。
     ''' </summary>
-    Private Sub PageCheck(sender As FrameworkElement, e As RouteEventArgs) Handles ItemOverall.Check, ItemMod.Check, ItemModDisabled.Check, ItemSetup.Check, ItemModify.Check, ItemExport.Check, ItemFile.Check, ItemTranslate.Check, ItemSeed.Check, ItemResourcePack.Check, ItemShaderPack.Check, ItemDataPack.Check
+    Private Sub PageCheck(sender As FrameworkElement, e As RouteEventArgs) Handles ItemOverall.Check, ItemMod.Check, ItemModDisabled.Check, ItemSetup.Check, ItemModify.Check, ItemExport.Check, ItemFile.Check, ItemTranslate.Check, ItemSeed.Check, ItemUpload.Check, ItemDownload.Check, ItemResourcePack.Check, ItemShaderPack.Check, ItemDataPack.Check
         '尚未初始化控件属性时，sender.Tag 为 Nothing，会导致切换到页面 0
         '若使用 IsLoaded，则会导致模拟点击不被执行（模拟点击切换页面时，控件的 IsLoaded 为 False）
         If sender.Tag IsNot Nothing Then PageChange(Val(sender.Tag))
@@ -51,6 +53,12 @@ Public Class PageInstanceLeft
             Case FormMain.PageSubType.InstanceSetup
                 If FrmInstanceSetup Is Nothing Then FrmInstanceSetup = New PageInstanceSetup
                 Return FrmInstanceSetup
+            Case FormMain.PageSubType.InstanceUpload
+                If FrmInstanceUpload Is Nothing Then FrmInstanceUpload = New PageInstanceUpload
+                Return FrmInstanceUpload
+            Case FormMain.PageSubType.InstanceDownload
+                If FrmInstanceDownload Is Nothing Then FrmInstanceDownload = New PageInstanceDownload
+                Return FrmInstanceDownload
             Case FormMain.PageSubType.InstanceExport
                 If FrmInstanceExport Is Nothing Then FrmInstanceExport = New PageInstanceExport
                 Return FrmInstanceExport
@@ -61,8 +69,6 @@ Public Class PageInstanceLeft
                 If FrmInstanceTranslate Is Nothing Then FrmInstanceTranslate = New PageInstanceTranslate
                 Return FrmInstanceTranslate
             Case FormMain.PageSubType.InstanceSeed
-                If FrmInstanceSeed Is Nothing Then FrmInstanceSeed = New PageInstanceSeed
-                Return FrmInstanceSeed
             Case FormMain.PageSubType.InstanceModify
                 If FrmDownloadModify Is Nothing Then FrmDownloadModify = New PageDownloadModify
                 Return FrmDownloadModify

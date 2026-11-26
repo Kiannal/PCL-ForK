@@ -1,4 +1,4 @@
-<local:MyPageRight
+﻿<local:MyPageRight
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="clr-namespace:PCL" xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -81,14 +81,14 @@
                     <TextBlock Text="选择世界" VerticalAlignment="Center" Margin="0,0,22,0" />
                     <local:MyComboBox Grid.Column="1" x:Name="ComboWorld" />
                     <TextBlock Grid.Row="2" Text="游戏模式" VerticalAlignment="Center" Margin="0,0,22,0" />
-                    <local:MyComboBox Grid.Row="2" Grid.Column="1" x:Name="ComboWorldGameMode">
+                    <local:MyComboBox Grid.Row="2" Grid.Column="1" x:Name="ComboWorldGameMode" SelectedIndex="0">
                         <local:MyComboBoxItem Content="生存" Tag="0" />
                         <local:MyComboBoxItem Content="创造" Tag="1" />
                         <local:MyComboBoxItem Content="冒险" Tag="2" />
                         <local:MyComboBoxItem Content="旁观" Tag="3" />
                     </local:MyComboBox>
                     <TextBlock Grid.Row="4" Text="难度" VerticalAlignment="Center" Margin="0,0,22,0" />
-                    <local:MyComboBox Grid.Row="4" Grid.Column="1" x:Name="ComboWorldDifficulty">
+                    <local:MyComboBox Grid.Row="4" Grid.Column="1" x:Name="ComboWorldDifficulty" SelectedIndex="0">
                         <local:MyComboBoxItem Content="和平" Tag="0" />
                         <local:MyComboBoxItem Content="简单" Tag="1" />
                         <local:MyComboBoxItem Content="普通" Tag="2" />

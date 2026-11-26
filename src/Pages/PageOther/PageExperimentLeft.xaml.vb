@@ -1,4 +1,4 @@
-Public Class PageExperimentLeft
+﻿Public Class PageExperimentLeft
 
     Public PageID As FormMain.PageSubType = FormMain.PageSubType.Default
 
@@ -6,7 +6,7 @@ Public Class PageExperimentLeft
         InitializeComponent()
     End Sub
 
-    Private Sub PageCheck(sender As FrameworkElement, e As RouteEventArgs) Handles ItemScreenshot.Check, ItemLitematic.Check, ItemModdev.Check, ItemSkinPaint.Check
+    Private Sub PageCheck(sender As FrameworkElement, e As RouteEventArgs) Handles ItemScreenshot.Check, ItemLitematic.Check, ItemModdev.Check
         If sender.Tag IsNot Nothing Then
             PageID = CType(Val(sender.Tag), FormMain.PageSubType)
             Dim Target As MyPageRight = PageGet(PageID)
@@ -39,9 +39,6 @@ Public Class PageExperimentLeft
             Case 7
                 If FrmOtherModdev Is Nothing Then FrmOtherModdev = New PageOtherModdev
                 Return FrmOtherModdev
-            Case 8
-                If FrmSkinPaint Is Nothing Then FrmSkinPaint = New PageSkinPaint
-                Return FrmSkinPaint
             Case Else
                 If FrmExperiment Is Nothing Then FrmExperiment = New PageExperiment
                 Return FrmExperiment

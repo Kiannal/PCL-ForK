@@ -1,4 +1,4 @@
-Imports System.Runtime.InteropServices
+﻿Imports System.Runtime.InteropServices
 
 Public Class PageOtherTest
 
@@ -328,6 +328,27 @@ Public Class PageOtherTest
         Catch ex As Exception
             Hint("解除帧率限制失败：" & ex.Message, HintType.Red)
         End Try
+    End Sub
+
+
+    Private Sub PageOtherTest_Loaded(sender As Object, e As RoutedEventArgs) Handles Me.Loaded
+        Try
+            LabNeteaseStatus.Text = If(ModNeteaseTool.IsReady, "组件已就绪：" & ModNeteaseTool.ToolFolder, "内置组件 " & ModNeteaseTool.GetPackageSizeText() & "，首次打开自动释放。")
+        Catch ex As Exception
+        End Try
+    End Sub
+
+    Private Sub BtnNeteaseTool_Click() Handles BtnNeteaseTool.Click
+        LabNeteaseStatus.Text = "正在准备网易中国版……"
+        ModNeteaseTool.Launch(Sub(Text As String)
+                                   RunInUi(Sub() LabNeteaseStatus.Text = Text)
+                               End Sub)
+    End Sub
+
+    Private Sub BtnNeteaseReset_Click() Handles BtnNeteaseReset.Click
+        If MyMsgBox("将删除已释放的网易中国版组件（PCL\NetEase），账号与配置不受影响。继续？", "重新释放组件", "继续", "取消") <> 1 Then Return
+        ModNeteaseTool.ResetTool()
+        LabNeteaseStatus.Text = "已清除，下次打开时重新释放。"
     End Sub
 
 End Class

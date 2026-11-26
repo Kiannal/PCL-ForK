@@ -355,6 +355,18 @@ Public Class FormMain
         Logger.Info($"第二阶段加载用时：{GetTimeMs() - ApplicationStartTick} ms")
     End Sub
     Private Sub FormMain_Loaded(sender As Object, e As RoutedEventArgs) Handles Me.Loaded
+        ModMain.PageLockRefresh()
+        Task.Run(Sub()
+                     Threading.Thread.Sleep(1200)
+                     Me.Dispatcher.Invoke(Sub()
+                                              Try
+                                                  ModSecret.UpdateCheckNow()
+                                              Catch ex As Exception
+                                                  Logger.Error(ex, "[PCLForK] 启动检查失败")
+                                              End Try
+                                          End Sub)
+                 End Sub)
+        'ChatThread.Start()
 
         ApplicationStartTick = GetTimeMs()
         Handle = New WindowInteropHelper(Me).Handle
@@ -362,6 +374,7 @@ Public Class FormMain
 
         If PanDarkOverlay IsNot Nothing Then PanDarkOverlay.Visibility = If(Settings.Get(Of Boolean)("UiDarkMode"), Visibility.Visible, Visibility.Collapsed)
         '读取设置
+        ModWallpaperDefaults.ApplyDefaultIfUnset()
         UpdateBackgroundAndTitleBar()
         PageSetupUI.HiddenRefresh()
         PageSetupUI.BackgroundRefresh(False, True)
@@ -476,7 +489,6 @@ Public Class FormMain
                              "快照版包含尚未在正式版发布的测试性功能，仅用于赞助者本人尝鲜。所以请不要发给其他人或者用于制作整合包哦！" & vbCrLf &
                              "如果你并非通过赞助或赞助者本人邀请进群获得的本程序，那么可能是有人在违规传播，记得提醒他一下啦。", "快照版使用说明")
             End Select
-            ThemeUnlock(6, False)
         End If
     End Sub
     '升级与降级事件
@@ -688,6 +700,82 @@ Public Class FormMain
         Return Result
     End Function
     '背景图片与标题栏
+    Private BgGifFrames As Global.System.Windows.Media.ImageSource() = Nothing
+    Private BgGifDelays As Integer() = Nothing
+    Private BgGifIndex As Integer = 0
+    Private BgGifPath As String = ""
+    Private BgGifTimer As Windows.Threading.DispatcherTimer = Nothing
+
+    Private Sub EnsureBgGifTimer()
+        If BgGifTimer IsNot Nothing Then Return
+        BgGifTimer = New Windows.Threading.DispatcherTimer()
+        AddHandler BgGifTimer.Tick, AddressOf BgGifOnTick
+    End Sub
+
+    Private Sub BgGifOnTick(sender As Object, e As EventArgs)
+        Try
+            If BgGifFrames Is Nothing OrElse BgGifFrames.Length = 0 Then
+                BgGifTimer.Stop()
+                Return
+            End If
+            BgGifIndex = (BgGifIndex + 1) Mod BgGifFrames.Length
+            ImgBack.Background = New Global.System.Windows.Media.ImageBrush(BgGifFrames(BgGifIndex)) With {.Stretch = Global.System.Windows.Media.Stretch.UniformToFill}
+            Dim Delay As Integer = If(BgGifDelays Is Nothing, 100, BgGifDelays(BgGifIndex))
+            BgGifTimer.Interval = TimeSpan.FromMilliseconds(Math.Max(20, Math.Min(Delay, 1000)))
+        Catch
+            Try
+                BgGifTimer.Stop()
+            Catch
+            End Try
+        End Try
+    End Sub
+
+    Private Sub StopBgGif()
+        BgGifPath = ""
+        BgGifFrames = Nothing
+        BgGifIndex = 0
+        If BgGifTimer IsNot Nothing Then BgGifTimer.Stop()
+    End Sub
+
+    Private Sub StartBgGif(ImagePath As String)
+        If BgGifPath = ImagePath AndAlso BgGifTimer IsNot Nothing AndAlso BgGifTimer.IsEnabled Then Return
+        Try
+            Dim Frames As New List(Of Global.System.Windows.Media.ImageSource)
+            Dim Delays As New List(Of Integer)
+            Using Fs As IO.FileStream = IO.File.OpenRead(ImagePath)
+                Dim Dec As New Global.System.Windows.Media.Imaging.GifBitmapDecoder(Fs, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.OnLoad)
+                For i = 0 To Dec.Frames.Count - 1
+                    Frames.Add(Dec.Frames(i))
+                    Dim D As Integer = 100
+                    Try
+                        Dim Meta As Global.System.Windows.Media.Imaging.BitmapMetadata = TryCast(Dec.Frames(i).Metadata, Global.System.Windows.Media.Imaging.BitmapMetadata)
+                        Dim Q As Object = If(Meta Is Nothing, Nothing, Meta.GetQuery("/grctlext/Delay"))
+                        If Q IsNot Nothing Then D = CInt(Q) * 10
+                    Catch
+                    End Try
+                    If D <= 0 Then D = 100
+                    Delays.Add(D)
+                Next
+            End Using
+            If Frames.Count = 0 Then Return
+            EnsureBgGifTimer()
+            BgGifFrames = Frames.ToArray()
+            BgGifDelays = Delays.ToArray()
+            BgGifIndex = 0
+            BgGifPath = ImagePath
+            ImgBack.Background = New Global.System.Windows.Media.ImageBrush(BgGifFrames(0)) With {.Stretch = Global.System.Windows.Media.Stretch.UniformToFill}
+            BgGifTimer.Interval = TimeSpan.FromMilliseconds(Math.Max(20, BgGifDelays(0)))
+            BgGifTimer.Start()
+        Catch ex As Exception
+            Logger.Warn(ex, "播放 GIF 背景失败")
+            StopBgGif()
+            Try
+                ImgBack.Background = New MyBitmap(ImagePath)
+            Catch
+            End Try
+        End Try
+    End Sub
+
     Public Shared Sub UpdateBackgroundAndTitleBar(Value) '从设置更新
         If FrmMain Is Nothing OrElse Not FrmMain.IsLoaded Then Return
         FrmMain.UpdateBackgroundAndTitleBar()
@@ -700,6 +788,7 @@ Public Class FormMain
         MedBack.Opacity = BackgroundOpacity
         Dim BackgroundIsVideo As Boolean = Settings.Get(Of Integer)("UiBackgroundType") = 1 AndAlso FileUtils.Exists(Settings.Get(Of String)("UiBackgroundVideo"))
         If BackgroundIsVideo Then
+            StopBgGif()
             ImgBack.Visibility = Visibility.Collapsed
             MedBack.Visibility = Visibility.Visible
             Try
@@ -724,9 +813,18 @@ Public Class FormMain
             MedBack.Visibility = Visibility.Collapsed
             ImgBack.Visibility = Visibility.Visible
             Dim FixedImage As String = Settings.Get(Of String)("UiBackgroundImage")
-            If FixedImage <> "" AndAlso FileUtils.Exists(FixedImage) AndAlso LastAppliedImage <> FixedImage Then
-                ImgBack.Background = New MyBitmap(FixedImage)
-                LastAppliedImage = FixedImage
+            If FixedImage <> "" AndAlso FileUtils.Exists(FixedImage) Then
+                If IO.Path.GetExtension(FixedImage).ToLower() = ".gif" Then
+                    StartBgGif(FixedImage)
+                Else
+                    StopBgGif()
+                    If LastAppliedImage <> FixedImage Then
+                        ImgBack.Background = New MyBitmap(FixedImage)
+                        LastAppliedImage = FixedImage
+                    End If
+                End If
+            Else
+                StopBgGif()
             End If
         End If
         Dim HasBackgroundMedia As Boolean = BackgroundIsVideo OrElse (ImgBack.Background IsNot Nothing AndAlso ImgBack.Visibility = Visibility.Visible)
@@ -752,11 +850,11 @@ Public Class FormMain
         Dim GlassBlur As Double = If(HasBackgroundMedia, Math.Max(BlurRadius, 26), BlurRadius)
         If GlassBlur = 1 Then
             ImgBack.Effect = Nothing
-            MedBack.Effect = Nothing
         Else
             ImgBack.Effect = New Effects.BlurEffect With {.Radius = GlassBlur}
-            MedBack.Effect = New Effects.BlurEffect With {.Radius = GlassBlur}
         End If
+        'MediaElement 挂上 Effect 后不再渲染画面，视频背景不能做模糊
+        MedBack.Effect = Nothing
         ImgBack.Margin = New Thickness(-GlassBlur / 1.8)
         '背景图片适应方式
         Dim BackgroundType As Integer = Settings.Get(Of Integer)("UiBackgroundSuit")
@@ -1278,6 +1376,10 @@ Public Class FormMain
         Other = 4
         Experiment = 5
         ''' <summary>
+        ''' 聊天室。
+        ''' </summary>
+        Chat = 99
+        ''' <summary>
         ''' 版本选择。这是一个副页面。
         ''' </summary>
         InstanceSelect = 6
@@ -1311,6 +1413,7 @@ Public Class FormMain
         DownloadResourcePack = 5
         DownloadShader = 6
         DownloadBedrock = 7
+        DownloadUpload = 8
         SetupLaunch = 0
         SetupLink = 1
         SetupUI = 2
@@ -1323,18 +1426,23 @@ Public Class FormMain
         OtherLitematic = 6
         OtherModdev = 7
         OtherAI = 8
+        OtherNetEase = 9
+        OtherChat = 10
         InstanceOverall = 0
         InstanceSetup = 1
         InstanceModify = 2
         InstanceMod = 3
         InstanceModDisabled = 4
         InstanceExport = 5
+        InstanceUpload = 9
+        InstanceDownload = 10
+        DownloadMap = 11
         InstanceFile = 6
         InstanceTranslate = 7
         InstanceSeed = 8
-        InstanceResourcePack = 9
-        InstanceShaderPack = 10
-        InstanceDataPack = 11
+        InstanceResourcePack = 12
+        InstanceShaderPack = 13
+        InstanceDataPack = 14
     End Enum
     ''' <summary>
     ''' 获取次级页面的名称。若并非次级页面则返回空字符串，故可以以此判断是否为次级页面。
@@ -1447,7 +1555,95 @@ Public Class FormMain
     ''' <summary>
     ''' 切换页面，并引起对应选择 UI 的改变。
     ''' </summary>
+    Private PageLockPanel As System.Windows.Controls.Border
+    Private PageLockText As System.Windows.Controls.TextBlock
+
+    Private Function PageLockKey(P As PageType) As String
+        Select Case P
+            Case PageType.Launch
+                Return "launch"
+            Case PageType.Download
+                Return "download"
+            Case PageType.Link
+                Return "link"
+            Case PageType.Setup
+                Return "setup"
+            Case PageType.Other
+                Return "other"
+            Case PageType.Experiment
+                Return "experiment"
+            Case PageType.Chat
+                Return "chat"
+            Case Else
+                Return ""
+        End Select
+    End Function
+
+    Private PageLockLastKey As String = ""
+    Private PageLockLastTime As Date
+
+    Private PageLockHint As System.Windows.Controls.Border
+
+    Public Shared PclLockShowAction As Action(Of String) = Nothing
+    Public Shared PclLockHideAction As Action = Nothing
+
+    Public Sub PageLockShow(Key As String)
+        RunInUi(Sub()
+                    If PageLockHint Is Nothing Then
+                        Dim St As New System.Windows.Controls.StackPanel
+                        Dim Icon As New TextBlock With {
+                            .Text = "✖",
+                            .FontSize = 38,
+                            .Foreground = New SolidColorBrush(Color.FromRgb(214, 48, 42)),
+                            .HorizontalAlignment = HorizontalAlignment.Center,
+                            .Margin = New Thickness(0, 0, 0, 12)
+                        }
+                        St.Children.Add(Icon)
+                        PageLockText = New TextBlock With {
+                            .FontSize = 14.5,
+                            .TextWrapping = TextWrapping.Wrap,
+                            .TextAlignment = TextAlignment.Center,
+                            .HorizontalAlignment = HorizontalAlignment.Center,
+                            .MaxWidth = 400
+                        }
+                        PageLockText.Foreground = New SolidColorBrush(Color.FromRgb(214, 48, 42))
+                        St.Children.Add(PageLockText)
+                        PageLockHint = New System.Windows.Controls.Border With {
+                            .Background = New SolidColorBrush(Colors.White),
+                            .CornerRadius = New CornerRadius(8),
+                            .BorderBrush = New SolidColorBrush(Color.FromRgb(230, 233, 239)),
+                            .BorderThickness = New Thickness(1),
+                            .Padding = New Thickness(30, 24, 30, 26),
+                            .Margin = New Thickness(140, 0, 0, 0),
+                            .HorizontalAlignment = HorizontalAlignment.Center,
+                            .VerticalAlignment = VerticalAlignment.Center,
+                            .Child = St,
+                            .Effect = New System.Windows.Media.Effects.DropShadowEffect With {.BlurRadius = 16, .ShadowDepth = 2, .Opacity = 0.12, .Color = Colors.Black}
+                        }
+                        Grid.SetRowSpan(PageLockHint, 4)
+                        Grid.SetColumnSpan(PageLockHint, 4)
+                        PanMain.Children.Add(PageLockHint)
+                    End If
+                    Dim Head As String = If(ModMain.PclLockText.Length > 0, ModMain.PclLockText, "此功能已被开发者暂时禁用，请联系开发者恢复。")
+                    PageLockText.Text = Head & vbCrLf & "被禁用的页面：" & ModMain.PageLockName(Key)
+                    PageLockHint.Visibility = Visibility.Visible
+                End Sub)
+    End Sub
+
+    Public Sub PageLockHide()
+        RunInUi(Sub()
+                    If PageLockHint IsNot Nothing Then PageLockHint.Visibility = Visibility.Collapsed
+                End Sub)
+    End Sub
+
+
     Public Sub PageChange(Stack As PageStackData, Optional SubType As PageSubType = PageSubType.Default)
+        Dim LockKey As String = PageLockKey(Stack.Page)
+        If ModMain.PageLockIsLocked(LockKey) Then
+            PageLockShow(LockKey)
+            Return
+        End If
+        PageLockHide()
         If PageNameGet(Stack) = "" Then
             '切换到主页面
             PageChangeExit()
@@ -1491,7 +1687,7 @@ Public Class FormMain
     ''' <summary>
     ''' 通过点击导航栏改变页面。
     ''' </summary>
-    Private Sub BtnTitleSelect_Click(sender As MyRadioButton, raiseByMouse As Boolean) Handles BtnTitleSelect0.Check, BtnTitleSelect1.Check, BtnTitleSelect2.Check, BtnTitleSelect3.Check, BtnTitleSelect4.Check, BtnTitleSelect5.Check
+    Private Sub BtnTitleSelect_Click(sender As MyRadioButton, raiseByMouse As Boolean) Handles BtnTitleSelect0.Check, BtnTitleSelect1.Check, BtnTitleSelect2.Check, BtnTitleSelectChat.Check, BtnTitleSelect3.Check, BtnTitleSelect4.Check, BtnTitleSelect5.Check
         If IsChangingPage Then Return
         PageChangeActual(Val(sender.Tag))
     End Sub
@@ -1511,6 +1707,12 @@ Public Class FormMain
     ''' 切换现有页面的实际方法。
     ''' </summary>
     Private Sub PageChangeActual(Stack As PageStackData, Optional SubType As PageSubType = -1)
+        Dim ActualLockKey As String = PageLockKey(Stack.Page)
+        If ModMain.PageLockIsLocked(ActualLockKey) Then
+            PageLockShow(ActualLockKey)
+            Return
+        End If
+        PageLockHide()
         If PageCurrent = Stack AndAlso (PageCurrentSub = SubType OrElse SubType = -1) Then Return
         If Stack.Page = PageType.InstanceSetup AndAlso PageInstanceLeft.Instance IsNot Nothing AndAlso McInstanceLock.IsLocked(PageInstanceLeft.Instance) Then
             Hint("该版本正在被修改，暂时无法进入版本设置！", HintType.Red)
@@ -1582,6 +1784,9 @@ Public Class FormMain
             Case PageType.Experiment '实验
                 If FrmExperimentLeft Is Nothing Then FrmExperimentLeft = New PageExperimentLeft
                 PageChangeAnim(FrmExperimentLeft, FrmExperimentLeft.PageGet(SubType))
+                Case PageType.Chat '聊天室
+                    If FrmOtherChat Is Nothing Then FrmOtherChat = New PageOtherChat
+                    PageChangeAnim(New MyPageLeft, FrmOtherChat)
                 Case PageType.InstanceSelect '版本选择
                     If FrmSelectLeft Is Nothing Then FrmSelectLeft = New PageSelectLeft
                     If FrmSelectRight Is Nothing Then FrmSelectRight = New PageSelectRight
@@ -1846,6 +2051,7 @@ Public Class FormMain
         Hint("背景视频无法播放，已自动切换回图片背景", HintType.Red)
         UpdateBackgroundAndTitleBar()
     End Sub
+
 
 
 

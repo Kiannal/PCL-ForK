@@ -1,4 +1,4 @@
-Public Class PageOtherLeft
+﻿Public Class PageOtherLeft
 
     Private IsLoad As Boolean = False
     Private IsPageSwitched As Boolean = False '如果在 Loaded 前切换到其他页面，会导致触发 Loaded 时再次切换一次
@@ -35,7 +35,7 @@ Public Class PageOtherLeft
     ''' <summary>
     ''' 勾选事件改变页面。
     ''' </summary>
-    Private Sub PageCheck(sender As FrameworkElement, e As RouteEventArgs) Handles ItemTest.Check, ItemSkin.Check, ItemLitematic.Check, ItemModdev.Check, ItemAI.Check
+    Private Sub PageCheck(sender As FrameworkElement, e As RouteEventArgs) Handles ItemHelp.Check, ItemAbout.Check, ItemTest.Check, ItemSkin.Check, ItemLitematic.Check, ItemModdev.Check, ItemAI.Check, ItemNetEase.Check
         '尚未初始化控件属性时，sender.Tag 为 Nothing，会导致切换到页面 0
         '若使用 IsLoaded，则会导致模拟点击不被执行（模拟点击切换页面时，控件的 IsLoaded 为 False）
         If sender.Tag IsNot Nothing Then PageChange(Val(sender.Tag))
@@ -44,6 +44,9 @@ Public Class PageOtherLeft
     Public Function PageGet(Optional ID As FormMain.PageSubType = -1)
         If ID = -1 Then ID = PageID
         Select Case ID
+            Case FormMain.PageSubType.OtherChat
+                If FrmOtherChat Is Nothing Then FrmOtherChat = New PageOtherChat
+                Return FrmOtherChat
             Case FormMain.PageSubType.OtherHelp
                 If FrmOtherHelp Is Nothing Then FrmOtherHelp = New PageOtherHelp
                 Return FrmOtherHelp
@@ -65,6 +68,9 @@ Public Class PageOtherLeft
             Case FormMain.PageSubType.OtherAI
                 If FrmOtherAI Is Nothing Then FrmOtherAI = New PageOtherAI
                 Return FrmOtherAI
+            Case FormMain.PageSubType.OtherNetEase
+                If FrmOtherNetEase Is Nothing Then FrmOtherNetEase = New PageOtherNetEase
+                Return FrmOtherNetEase
             Case Else
                 Throw New Exception("未知的工具子页面种类：" & ID)
         End Select
@@ -74,7 +80,12 @@ Public Class PageOtherLeft
     ''' 切换现有页面。
     ''' </summary>
     Public Sub PageChange(ID As FormMain.PageSubType)
+        If ID = FormMain.PageSubType.OtherNetEase AndAlso ModMain.PageLockIsLocked("netease") Then
+            ModMain.NetEaseLockTip()
+            Return
+        End If
         If PageID = ID Then Return
+        ModMain.PageLockTipHide()
         AniControlEnabled += 1
         IsPageSwitched = True
         Try

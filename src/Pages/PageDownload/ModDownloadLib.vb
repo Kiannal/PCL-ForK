@@ -1,4 +1,4 @@
-Public Module ModDownloadLib
+﻿Public Module ModDownloadLib
 
 #Region "Minecraft 下载"
 
@@ -63,6 +63,19 @@ Public Module ModDownloadLib
             Sub(Task) Task.Output = McAssetsFixList(NewInstance, True, Task)) With {.ProgressWeight = 0.01, .Show = False})
         LoadersAssets.Add(New LoaderDownload("下载资源文件（副加载器）", New List(Of NetFile)) With {.ProgressWeight = 14, .Show = False})
         Loaders.Add(New LoaderCombo(Of String)("下载原版资源文件", LoadersAssets) With {.Block = False, .ProgressWeight = 18})
+
+        '下载版本 JAR：安装时一并落盘，否则启动时才补，缺了直接 ClassNotFoundException
+        Loaders.Add(New LoaderTask(Of String, List(Of NetFile))("分析版本 JAR 文件下载地址",
+            Sub(Task As LoaderTask(Of String, List(Of NetFile)))
+                Try
+                    Dim JarFile As NetFile = DlClientJarGet(NewInstance, False)
+                    Task.Output = If(JarFile Is Nothing, New List(Of NetFile), New List(Of NetFile) From {JarFile})
+                Catch ex As Exception
+                    Task.Output = New List(Of NetFile)
+                    Logger.Warn(ex, "分析版本 JAR 文件下载地址失败")
+                End Try
+            End Sub) With {.ProgressWeight = 0.5, .Show = False})
+        Loaders.Add(New LoaderDownload("下载版本 JAR 文件", New List(Of NetFile)) With {.ProgressWeight = 8})
 
         Return Loaders
 
@@ -1796,7 +1809,7 @@ Retry:
         '原版
         Dim ClientLoader = New LoaderCombo(Of String)("下载原版 " & Request.Components.MinecraftVersion,
             McDownloadClientLoader(Request.Components.MinecraftVersion, Request.MinecraftJson, VersionFolder)) With {
-            .ProgressWeight = 39, .Show = False, .Block = Not Modable AndAlso OptiFineEntry Is Nothing}
+            .ProgressWeight = 32, .Show = False, .Block = Not Modable AndAlso OptiFineEntry Is Nothing}
         LoaderList.Add(ClientLoader)
         'OptiFine
         If OptiFineEntry IsNot Nothing Then
@@ -1854,7 +1867,7 @@ Retry:
             Dim ResourcepacksFolder = TargetFolder & "resourcepacks\"
             DirectoryUtils.Create(ResourcepacksFolder)
             Logger.Info($"自动创建资源包文件夹：{ResourcepacksFolder}")
-        End Sub) With {.ProgressWeight = 2, .Block = True})
+        End Sub) With {.ProgressWeight = 8, .Block = True})
         '补全文件
         Dim LoadersLib As New List(Of LoaderBase)
         LoadersLib.Add(New LoaderTask(Of String, List(Of NetFile))("分析游戏支持库文件（副加载器）", Sub(Task) Task.Output = McLibNetFilesFromInstance(New McInstance(VersionFolder))) With {.ProgressWeight = 1, .Show = False})

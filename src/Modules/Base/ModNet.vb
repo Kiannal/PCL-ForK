@@ -1,4 +1,4 @@
-Imports System.Net.Sockets
+﻿Imports System.Net.Sockets
 
 Public Module ModNet
 
@@ -7,6 +7,58 @@ Public Module ModNet
     ''' <summary>
     ''' 发送一次网络请求并获取返回内容。
     ''' </summary>
+    Private ReadOnly RelayHosts As String() = {"launchermeta.mojang.com", "piston-data.mojang.com", "piston-meta.mojang.com", "bmclapi2.bangbang93.com", "bmclapi.bangbang93.com", "resources.download.minecraft.net", "libraries.minecraft.net", "files.minecraftforge.net", "maven.minecraftforge.net", "meta.fabricmc.net", "maven.fabricmc.net", "launcher.mojang.com"}
+
+    ''' <summary>
+    ''' 把 Mojang 资源地址映射到对象存储镜像。无法映射时返回 Nothing。
+    ''' client.jar 与 assetIndex 的地址里只有哈希，反推不出文件名，由调用方显式拼好镜像地址。
+    ''' </summary>
+    Private Function McMirrorUrl(Url As String) As String
+        Const MirrorRoot As String = "https://pcl-update.cn-nb2.rains3.com/mc/"
+        Try
+            '版本清单：整份镜像，官方源在国内要 3 秒以上
+            If Url.Contains("version_manifest_v2.json") Then Return MirrorRoot & "version_manifest_v2.json"
+            If Url.Contains("version_manifest.json") Then Return MirrorRoot & "version_manifest.json"
+            Const LibHost As String = "libraries.minecraft.net/"
+            Const AssetHost As String = "resources.download.minecraft.net/"
+            Dim Idx As Integer
+            Idx = Url.IndexOf(LibHost, StringComparison.OrdinalIgnoreCase)
+            If Idx >= 0 Then Return MirrorRoot & "libraries/" & Url.Substring(Idx + LibHost.Length)
+            Idx = Url.IndexOf(AssetHost, StringComparison.OrdinalIgnoreCase)
+            If Idx >= 0 Then Return MirrorRoot & "assets/objects/" & Url.Substring(Idx + AssetHost.Length)
+        Catch
+        End Try
+        Return Nothing
+    End Function
+
+    Public Function McdlRelay(Url As String) As String
+        Try
+            If String.IsNullOrWhiteSpace(Url) Then Return Url
+            Dim RelayMode As Integer = 0
+            Try
+                RelayMode = Settings.Get(Of Integer)("ToolDownloadRelay")
+            Catch
+                RelayMode = 0
+            End Try
+            If RelayMode = 2 Then Return Url
+            Dim Hit As Boolean = False
+            For Each H In RelayHosts
+                If Url.IndexOf(H, StringComparison.OrdinalIgnoreCase) >= 0 Then
+                    Hit = True
+                    Exit For
+                End If
+            Next
+            If Not Hit Then Return Url
+            '对象存储镜像：libraries 与 assets 路径可直接映射
+            Dim Mirror As String = McMirrorUrl(Url)
+            If Mirror IsNot Nothing Then Return Mirror
+            Dim B64 As String = Convert.ToBase64String(Global.System.Text.Encoding.UTF8.GetBytes(Url)).Replace("+"c, "-"c).Replace("/"c, "_"c).TrimEnd("="c)
+            Return "http://189.105.65.219:8899/mcdl.php?u=" & B64
+        Catch ex As Exception
+            Return Url
+        End Try
+    End Function
+
     Public Function NetRequestByClient(Url As String, Optional Method As HttpMethod = Nothing,
             Optional Content As Object = Nothing, Optional ContentType As String = Nothing, Optional Accept As String = "*/*",
             Optional Timeout As Integer = 25000, Optional Headers As String(,) = Nothing, Optional RequireJson As Boolean = False,
@@ -301,16 +353,21 @@ Retry:
 
 #Region "多线程下载引擎"
 
+    '补全文件时是成百上千个小请求，走代理会让每个请求多一次系统探测
     Private ThreadClient As New HttpClient(New HttpClientHandler With {
-        .AutomaticDecompression = DecompressionMethods.Deflate Or DecompressionMethods.GZip
+        .AutomaticDecompression = DecompressionMethods.Deflate Or DecompressionMethods.GZip,
+        .UseProxy = False
     })
-
     ''' <summary>
     ''' 最大线程数。
     ''' </summary>
     Public ReadOnly Property NetTaskThreadLimit As Integer
         Get
-            Return Math.Min(256, (Settings.Get(Of Integer)("ToolDownloadThread") + 1) * 2)
+            Dim UserThread As Integer = Settings.Get(Of Integer)("ToolDownloadThread")
+            Dim ThreadCount As Integer = (UserThread + 1) * 2
+            If ThreadCount < 64 Then ThreadCount = 64
+            '对象存储对单 IP 的连接数有容忍上限，并发堆到 256 时新连接会被拒，反而退化成另一条慢源
+            Return Math.Min(128, ThreadCount)
         End Get
     End Property
     ''' <summary>
@@ -608,13 +665,16 @@ Retry:
             If Id >= Sources.Count OrElse Id < 0 Then Id = 0
             SyncLock LockSource
                 If HasAvailableSource(False) Then
-                    '存在多线程可用源
-                    Dim CurrentSource As NetSource = Sources(Id)
-                    While CurrentSource.IsFailed
-                        Id += 1
-                        If Id >= Sources.Count Then Id = 0
+                    '优先用第一个源：调用方已按速度排序，轮转会让慢源分走一半线程
+                    Dim CurrentSource As NetSource = Sources(0)
+                    If CurrentSource.IsFailed Then
                         CurrentSource = Sources(Id)
-                    End While
+                        While CurrentSource.IsFailed
+                            Id += 1
+                            If Id >= Sources.Count Then Id = 0
+                            CurrentSource = Sources(Id)
+                        End While
+                    End If
                     Return CurrentSource
                 ElseIf SourcesOnce.Any Then
                     '仅存在单线程可用源
@@ -769,7 +829,7 @@ Retry:
             End Get
         End Property
 
-        Private Const FilePieceLimit As Long = 128 * 1024
+        Private Const FilePieceLimit As Long = 96 * 1024
         Public ReadOnly LockState As New Object
         Public ReadOnly LockChain As New Object
         Public ReadOnly LockSource As New Object
@@ -906,12 +966,12 @@ StartThread:
                 CancelToken As CancellationTokenSource = Nothing
             '部分下载源真的特别慢，并且只需要一个请求，例如 Ping 为 20s，如果增长太慢，就会造成类似 2.5s 5s 7.5s 10s 12.5s... 的极大延迟
             '延迟过长会导致某些特别慢的链接迟迟不被掐死
-            Dim Timeout As Integer = Math.Min(Math.Max(ConnectAverage, 10000) * (1 + Th.Source.FailCount), 30000)
+            Dim Timeout As Integer = Math.Min(Math.Max(ConnectAverage, 5000) * (1 + Th.Source.FailCount), 30000)
             Th.State = NetState.Connecting
             Try
                 Dim HttpDataCount As Integer = 0
                 If SourcesOnce.Contains(Th.Source) AndAlso Th <> Th.Source.SingleThread Then GoTo SourceBreak
-                HttpRequest = New HttpRequestMessage(HttpMethod.Get, Th.Source.Url)
+                    HttpRequest = New HttpRequestMessage(HttpMethod.Get, McdlRelay(Th.Source.Url))
                 SecretHeadersSign(Th.Source.Url, HttpRequest, SimulateBrowserHeaders)
                 CancelToken = New CancellationTokenSource(Timeout)
                 If Not Th.IsFirstThread Then HttpRequest.Headers.Range = New Headers.RangeHeaderValue(Th.DownloadStart, Nothing)
@@ -1080,7 +1140,8 @@ SourceBreak:
             If IsMergeFailure OrElse IsRangeNotSupported OrElse
                ex.Message.Contains("(502)") OrElse ex.Message.Contains("(404)") OrElse
                ex.Message.Contains("未能解析") OrElse ex.Message.Contains("无返回数据") OrElse ex.Message.Contains("空间不足") OrElse
-               ((ex.Message.Contains("(403)") OrElse ex.Message.Contains("(429)")) AndAlso Not Th.Source.Url.Contains("bmclapi")) OrElse 'BMCLAPI 的部分源在高频率请求下会返回 403/429，所以不应因此禁用下载源
+               ((ex.Message.Contains("(403)") OrElse ex.Message.Contains("(429)")) AndAlso
+                Not Th.Source.Url.Contains("bmclapi") AndAlso Not Th.Source.Url.Contains("rains3.com")) OrElse 'BMCLAPI 与对象存储在单文件缺失或高频请求时都会返回 403/429，不应因此禁用整个源
                (Th.Source.FailCount >= NetTaskThreadLimit.Clamp(5, 30) AndAlso DownloadDone < 1) OrElse Th.Source.FailCount > NetTaskThreadLimit + 2 Then
                 '当一个下载源有多个线程在下载时，只选择其中一个线程进行后续处理
                 Dim IsThisFail As Boolean = False
@@ -1372,17 +1433,21 @@ FinishExCatch:
         ''' 刷新公开属性。由 NetManager 每 0.1 秒调用一次。
         ''' </summary>
         Public Sub RefreshStat()
-            '计算进度
+            '计算进度：按文件大小加权，否则一个大文件会被几十个小文件稀释，进度卡在 99% 不动
             Dim NewProgress As Double = 0
             Dim TotalProgress As Double = 0
             For Each File In Files
+                Dim Weight As Double
                 If File.IsCopy Then
-                    NewProgress += File.Progress * 0.2
-                    TotalProgress += 0.2
+                    Weight = 0.2
+                ElseIf File.FileSize > 0 Then
+                    Weight = File.FileSize
                 Else
-                    NewProgress += File.Progress
-                    TotalProgress += 1
+                    '大小未知时按 256 KB 估算，既不被忽略也不压过真实大文件
+                    Weight = 256.0 * 1024
                 End If
+                NewProgress += File.Progress * Weight
+                TotalProgress += Weight
             Next
             If TotalProgress > 0 AndAlso Not Double.IsNaN(TotalProgress) Then NewProgress /= TotalProgress
             '刷新进度
@@ -1683,6 +1748,8 @@ FinishExCatch:
                 Static SpeedLast As New List(Of Long) '记录至多最近 30 次下载速度的记录，较新的在前面
                 Static SpeedLastDone As Long = 0 '上次记速时的已下载大小
                 Dim ActualSpeed As Double = Math.Max(0, (DownloadDone - SpeedLastDone) / (DeltaTime / 1000))
+                '采样窗口内没有数据块落地，通常是正在建连或切换文件，沿用上次的值，避免显示在 0 与正常值之间跳
+                If ActualSpeed <= 0 AndAlso NetTaskThreadCount > 0 AndAlso SpeedLast.Count > 0 Then ActualSpeed = SpeedLast(0)
                 SpeedLast.Insert(0, ActualSpeed)
                 If SpeedLast.Count >= 31 Then SpeedLast.RemoveAt(30)
                 SpeedLastDone = DownloadDone

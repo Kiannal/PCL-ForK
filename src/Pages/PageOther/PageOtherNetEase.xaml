@@ -1,0 +1,60 @@
+<local:MyPageRight x:Class="PageOtherNetEase"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="clr-namespace:PCL">
+    <Grid Margin="22,14,22,18">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="1*" />
+        </Grid.RowDefinitions>
+
+        <local:MyCard Grid.Row="0" Title="网易中国版" Margin="0,0,0,12">
+            <StackPanel Margin="20,44,20,16">
+                <TextBlock x:Name="LabAccount" TextWrapping="Wrap" Foreground="{DynamicResource ColorBrushGray2}"
+                           Text="正在初始化网易中国版组件……" />
+                <WrapPanel Margin="0,12,0,0">
+                    <local:MyComboBox x:Name="ComboAccounts" Width="240" Height="30" Margin="0,0,10,0" />
+                    <local:MyButton x:Name="BtnReloadAccounts" Height="30" MinWidth="90" Padding="12,0" Margin="0,0,10,0" Text="刷新账号" />
+                    <local:MyButton x:Name="BtnLogin" Height="30" MinWidth="110" Padding="12,0" Margin="0,0,10,0" Text="登录" ColorType="Highlight" />
+                    <local:MyButton x:Name="BtnAddAccount" Height="30" MinWidth="110" Padding="12,0" Margin="0,0,10,0" Text="添加账号" />
+                    <local:MyButton x:Name="BtnOffline" Height="30" MinWidth="100" Padding="12,0" Text="离线模式" />
+                </WrapPanel>
+            </StackPanel>
+        </local:MyCard>
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="330" />
+                <ColumnDefinition Width="12" />
+                <ColumnDefinition Width="1*" />
+            </Grid.ColumnDefinitions>
+
+            <local:MyCard Grid.Column="0" Title="命令列表">
+                <local:MyScrollViewer Margin="10,44,10,12" VerticalScrollBarVisibility="Auto">
+                    <StackPanel x:Name="PanCommands" />
+                </local:MyScrollViewer>
+            </local:MyCard>
+
+            <local:MyCard Grid.Column="2" Title="输出">
+                <Grid Margin="16,44,16,14">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="1*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <local:MyTextBox x:Name="TextLog" Grid.Row="0" IsReadOnly="True" AcceptsReturn="True"
+                                     VerticalScrollBarVisibility="Auto" FontSize="12" TextWrapping="Wrap" />
+                    <Grid Grid.Row="1" Margin="0,10,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <local:MyTextBox x:Name="TextInput" Grid.Column="0" Height="32" />
+                        <local:MyButton x:Name="BtnSend" Grid.Column="1" Height="32" MinWidth="80" Margin="10,0,0,0" Text="发送" ColorType="Highlight" />
+                        <local:MyButton x:Name="BtnClear" Grid.Column="2" Height="32" MinWidth="80" Margin="10,0,0,0" Text="清空" />
+                    </Grid>
+                </Grid>
+            </local:MyCard>
+        </Grid>
+    </Grid>
+</local:MyPageRight>

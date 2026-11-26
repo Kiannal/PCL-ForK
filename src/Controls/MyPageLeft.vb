@@ -1,4 +1,4 @@
-Public Class MyPageLeft
+﻿Public Class MyPageLeft
     Inherits Grid
     Private Uuid As Integer = GetUuid()
 
@@ -28,6 +28,12 @@ Public Class MyPageLeft
         Else
             '逐个进入动画
             Dim AniList As New List(Of AniData)
+            '先清掉上一次被打断时残留的偏移
+            For Each Prev As FrameworkElement In GetAllAnimControls(True)
+                If TypeOf Prev.RenderTransform Is TranslateTransform Then
+                    DirectCast(Prev.RenderTransform, TranslateTransform).X = 0
+                End If
+            Next
             Dim Id As Integer = 0, Delay As Integer = 0
             For Each Element As FrameworkElement In GetAllAnimControls(True)
                 Element = MyVirtualizingElement.TryInit(Element)
@@ -41,8 +47,15 @@ Public Class MyPageLeft
                     Element.RenderTransform = New TranslateTransform(-25, 0)
                     If TypeOf Element Is MyListItem Then CType(Element, MyListItem).IsMouseOverAnimationEnabled = False
                     AniList.Add(AaOpacity(Element, If(TypeOf Element Is TextBlock, 0.6, 1), 100, Delay, New AniEaseOutFluent(AniEasePower.Weak)))
-                    AniList.Add(AaTranslateX(Element, 5, 200, Delay, New AniEaseOutFluent))
-                    AniList.Add(AaTranslateX(Element, 20, 300, Delay, New AniEaseOutBack(AniEasePower.Weak)))
+                    AniList.Add(AaTranslateX(Element, 5, 240, Delay, New AniEaseOutFluent))
+                    AniList.Add(AaTranslateX(Element, 20, 240, Delay, New AniEaseOutBack(AniEasePower.Weak)))
+                    '过冲曲线结束时可能停在非零值，动画收尾强制归位，避免子菜单项左右偏移
+                    AniList.Add(AaCode(
+                        Sub()
+                            If TypeOf Element.RenderTransform Is TranslateTransform Then
+                                DirectCast(Element.RenderTransform, TranslateTransform).X = 0
+                            End If
+                        End Sub, Delay + 245))
                     If TypeOf Element Is MyListItem Then
                         AniList.Add(AaCode(
                         Sub()
@@ -76,6 +89,12 @@ Public Class MyPageLeft
             For Each Element As FrameworkElement In Controls
                 AniList.Add(AaOpacity(Element, -Element.Opacity, 50, 70 / Controls.Count * Id))
                 AniList.Add(AaTranslateX(Element, -6, 50, 70 / Controls.Count * Id))
+                AniList.Add(AaCode(
+                    Sub()
+                        If TypeOf Element.RenderTransform Is TranslateTransform Then
+                            DirectCast(Element.RenderTransform, TranslateTransform).X = 0
+                        End If
+                    End Sub, 70 / Controls.Count * Id + 55))
                 Id += 1
             Next
             AniStart(AniList, "PageLeft PageChange " & Uuid)

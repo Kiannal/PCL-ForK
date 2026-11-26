@@ -1,4 +1,4 @@
-'动画引擎模块
+﻿'动画引擎模块
 '使用 Ani 作为方法或属性的开头，使用 Aa 作为单个动画对象的开头（便于自动补全）
 
 Imports System.Windows.Media.Effects
@@ -13,7 +13,9 @@ Public Module ModAnimation
     Public ReadOnly Property AniSpeed As Double
         Get
             Dim Setting As Integer = Settings.Get(Of Integer)("SystemDebugAnim")
-            Return If(Setting >= 30, 200, (Setting * 0.1 + 0.1).Clamp(0.1, 3))
+            Dim Base As Double = If(Setting >= 30, 200, (Setting * 0.1 + 0.1).Clamp(0.1, 3))
+            '低配设备放大倍率，动画帧数更少，减少软件渲染压力
+            Return Base * ModPerformance.AnimationScale()
         End Get
     End Property
     ''' <summary>

@@ -1,4 +1,4 @@
-<Grid x:Class="MyResourceItem"
+﻿<Grid x:Class="MyResourceItem"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:PCL"
@@ -81,6 +81,6 @@
         <TextBlock x:Name="LabSource" Grid.Column="10" Margin="5,0,2,0" VerticalAlignment="Center" Foreground="{StaticResource ColorBrushGray4}" FontSize="12" />
     </Grid>
     <TextBlock x:Name="LabFavorite" Grid.Row="1" Grid.RowSpan="3" Grid.Column="4" HorizontalAlignment="Right" VerticalAlignment="Center"
-               Margin="0,0,10,0" FontSize="17" Text="☆" Foreground="{DynamicResource ColorBrushGray4}" ToolTip="收藏"
+               Margin="0,0,10,0" FontSize="18" Text="☆" Foreground="{DynamicResource ColorBrushGray4}" ToolTip="收藏"
                Cursor="Hand" PreviewMouseLeftButtonUp="LabFavorite_MouseUp" />
 </Grid>

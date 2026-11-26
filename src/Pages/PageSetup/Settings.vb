@@ -1,4 +1,4 @@
-Imports System.Security.Cryptography
+﻿Imports System.Security.Cryptography
 
 Public Class Settings
 
@@ -35,6 +35,8 @@ Public Class Settings
         New Setting("SystemDebugDelay", False, Source:=Sources.Registry),
         New Setting("SystemDebugSkipCopy", False, Source:=Sources.Registry),
         New Setting("SystemSystemCache", "D:\PCL\Cache\", Source:=Sources.Registry),
+        New Setting("ToolDownloadRelay", 0, Source:=Sources.Registry),
+        New Setting("WelfareShownCode", "", Source:=Sources.Registry),
             New Setting("SystemMemoryOptimize", True, Source:=Sources.Registry),
             New Setting("SystemMemoryOptimizeBackground", True, Source:=Sources.Registry),
             New Setting("SystemMemoryOptimizeInterval", 15, Source:=Sources.Registry),

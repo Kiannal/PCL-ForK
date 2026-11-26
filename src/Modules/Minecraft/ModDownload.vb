@@ -24,7 +24,17 @@ Public Module ModDownload
         If ReturnNothingOnFileUseable AndAlso Checker.Check(Instance.PathVersion & Instance.Name & ".jar") Is Nothing Then Return Nothing '通过校验
         '返回下载信息
         Dim JarUrl As String = Instance.JsonObject("downloads")("client")("url")
-        Return New NetFile(DlSourceLauncherOrMetaGet(JarUrl), Instance.PathVersion & Instance.Name & ".jar", Checker)
+        '对象存储的 key 用的是版本 JSON 里的 id（标准版本号），不是版本文件夹名
+        Dim VerId As String = ""
+        Try
+            If Instance.JsonObject("id") IsNot Nothing Then VerId = Instance.JsonObject("id").ToString()
+        Catch
+        End Try
+        If VerId.Length = 0 Then VerId = Instance.Name
+        Dim Mirrored As String = "https://pcl-update.cn-nb2.rains3.com/mc/client/" & VerId & ".jar"
+        Dim Urls As New List(Of String) From {Mirrored}
+        Urls.AddRange(DlSourceLauncherOrMetaGet(JarUrl))
+        Return New NetFile(Urls, Instance.PathVersion & Instance.Name & ".jar", Checker)
     End Function
 
     ''' <summary>
@@ -44,7 +54,9 @@ Public Module ModDownload
         If IndexUrl = "" Then
             Return Nothing
         Else
-            Return New NetFile(DlSourceLauncherOrMetaGet(IndexUrl), IndexAddress, New FileChecker With {.IsJson = True})
+            Dim Urls As New List(Of String) From {"https://pcl-update.cn-nb2.rains3.com/mc/assets/indexes/" & IndexInfo("id").ToString & ".json"}
+            Urls.AddRange(DlSourceLauncherOrMetaGet(IndexUrl))
+            Return New NetFile(Urls, IndexAddress, New FileChecker With {.IsJson = True})
         End If
     End Function
 
@@ -231,14 +243,15 @@ Public Module ModDownload
     Public DlClientListMojangLoader As New LoaderTask(Of String, DlClientListResult)("DlClientList Mojang", AddressOf DlClientListMojangMain)
     Private Sub DlClientListMojangMain(Loader As LoaderTask(Of String, DlClientListResult))
         Dim StartTime As Long = GetTimeMs()
-        Dim Json As JObject = NetRequestByClientRetry("https://launchermeta.mojang.com/mc/game/version_manifest.json", RequireJson:=True).DeserializeJson()
+        Dim Json As JObject = NetRequestByClientRetry(MirrorVersionManifest, RequireJson:=True).DeserializeJson()
         Try
             Dim Versions As JArray = Json("versions")
             If Versions.Count < 200 Then Throw New Exception("获取到的版本列表长度不足（" & Json.ToString & "）")
             '确定官方源是否可用
-            If Not DlPreferMojang Then
+            If (Not DlPreferMojang AndAlso (Date.Now - DlSpeedTestTime).TotalMinutes > 10) OrElse DlSpeedTestTime = Date.MinValue Then
                 Dim DeltaTime = GetTimeMs() - StartTime
-                DlPreferMojang = DeltaTime < 4000
+                DlPreferMojang = DeltaTime < 1200
+            DlSpeedTestTime = Date.Now
                 Logger.Info($"Mojang 官方源加载耗时：{DeltaTime}ms，{If(DlPreferMojang, "可优先使用官方源", "不优先使用官方源")}")
             End If
             '返回
@@ -271,7 +284,7 @@ Public Module ModDownload
     ''' </summary>
     Public DlClientListBmclapiLoader As New LoaderTask(Of String, DlClientListResult)("DlClientList Bmclapi", AddressOf DlClientListBmclapiMain)
     Private Sub DlClientListBmclapiMain(Loader As LoaderTask(Of String, DlClientListResult))
-        Dim Json As JObject = NetRequestByClientRetry("https://bmclapi2.bangbang93.com/mc/game/version_manifest.json", RequireJson:=True).DeserializeJson()
+        Dim Json As JObject = NetRequestByClientRetry(MirrorVersionManifest, RequireJson:=True).DeserializeJson()
         Try
             Dim Versions As JArray = Json("versions")
             If Versions.Count < 200 Then Throw New Exception("获取到的版本列表长度不足（" & Json.ToString & "）")
@@ -294,7 +307,12 @@ Public Module ModDownload
     ''' <summary>
     ''' 获取某个版本的 Json 下载地址，若失败则返回 Nothing。必须在工作线程执行。
     ''' </summary>
-    Public Function DlClientListGet(Id As String)
+        ''' <summary>
+    ''' 自建镜像上的版本清单，官方源在国内要 3 秒以上。带 15 分钟本地缓存。
+    ''' </summary>
+    Private ReadOnly MirrorVersionManifest As String = "https://pcl-update.cn-nb2.rains3.com/mc/version_manifest.json"
+
+Public Function DlClientListGet(Id As String)
         Try
             '确认版本格式标准
             Id = Id.Replace("_", "-") '1.7.10_pre4 在版本列表中显示为 1.7.10-pre4
@@ -1310,6 +1328,8 @@ Public Module ModDownload
 #Region "DlSource | 镜像下载源"
 
     Private DlPreferMojang As Boolean = False
+    Private DlSpeedTestTime As Date = Date.MinValue
+    Private DlSpeedBest As Integer = 0
     ''' <summary>
     ''' 下载文件（而非获取版本列表）的时候，是否优先使用官方源。
     ''' </summary>
@@ -1345,12 +1365,19 @@ Public Module ModDownload
     ''' </summary>
     Public Function DlSourceAssetsGet(Original As String) As IEnumerable(Of String)
         Original = Original.Replace("http://resources.download.minecraft.net", "https://resources.download.minecraft.net")
-        Return {
-            Original,
-            Original.Replace("https://resources.download.minecraft.net", "https://bmclapi.bangbang93.com/assets").
-                Replace("https://piston-data.mojang.com", "https://bmclapi.bangbang93.com/assets").
-                Replace("https://piston-meta.mojang.com", "https://bmclapi.bangbang93.com/assets")
-        }
+        '对象存储放第一位：它是直连 10MB/s，中转脚本只有 1.2MB/s
+        Dim Mirrored As String = Nothing
+        Const AssetHost As String = "resources.download.minecraft.net/"
+        Dim Idx As Integer = Original.IndexOf(AssetHost, StringComparison.OrdinalIgnoreCase)
+        If Idx >= 0 Then
+            Mirrored = "https://pcl-update.cn-nb2.rains3.com/mc/assets/objects/" & Original.Substring(Idx + AssetHost.Length)
+        End If
+        Dim Result As New List(Of String) From {Original}
+        If Mirrored IsNot Nothing Then Result.Insert(0, Mirrored)
+        Result.Add(Original.Replace("https://resources.download.minecraft.net", "https://bmclapi.bangbang93.com/assets").
+            Replace("https://piston-data.mojang.com", "https://bmclapi.bangbang93.com/assets").
+            Replace("https://piston-meta.mojang.com", "https://bmclapi.bangbang93.com/assets"))
+        Return Result
     End Function
     ''' <summary>
     ''' 下载 Libraries 文件。

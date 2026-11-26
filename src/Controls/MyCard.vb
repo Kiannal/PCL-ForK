@@ -1,4 +1,4 @@
-Public Class MyCard
+﻿Public Class MyCard
 
     '控件
     Inherits Grid
@@ -172,7 +172,7 @@ Public Class MyCard
         If Not IsNothing(MainSwap) Then AniList.Add(AaColor(MainSwap, Shapes.Path.FillProperty, "ColorBrush2", 90))
         AniList.AddRange({
             AaColor(MainChrome, MyDropShadow.ColorProperty, "ColorObject4", 90),
-            AaOpacity(MainChrome, DropShadowHoverOpacity - MainChrome.Opacity, 90)
+            AaOpacity(MainChrome, DropShadowHoverOpacity - MainChrome.Opacity, 100)
         })
         AniStart(AniList, "MyCard Mouse " & Uuid)
     End Sub
@@ -183,7 +183,7 @@ Public Class MyCard
         If Not IsNothing(MainSwap) Then AniList.Add(AaColor(MainSwap, Shapes.Path.FillProperty, "ColorBrush1", 90))
         AniList.AddRange({
             AaColor(MainChrome, MyDropShadow.ColorProperty, "ColorObject1", 90),
-            AaOpacity(MainChrome, DropShadowIdleOpacity - MainChrome.Opacity, 90)
+            AaOpacity(MainChrome, DropShadowIdleOpacity - MainChrome.Opacity, 100)
         })
         AniStart(AniList, "MyCard Mouse " & Uuid)
     End Sub
@@ -355,10 +355,10 @@ Public Class MyCard
     '液态玻璃高光
     Private Sub MyCard_MouseEnter_Glass(sender As Object, e As MouseEventArgs) Handles Me.MouseEnter
         If AniControlEnabled <> 0 Then Return
-        AniStart(AaOpacity(SheenBorder, 0.8 - SheenBorder.Opacity, 220), "MyCard Sheen " & Uuid, True)
+        AniStart(AaOpacity(SheenBorder, 0.8 - SheenBorder.Opacity, 240), "MyCard Sheen " & Uuid, True)
     End Sub
     Private Sub MyCard_MouseLeave_Glass(sender As Object, e As MouseEventArgs) Handles Me.MouseLeave
-        AniStart(AaOpacity(SheenBorder, -SheenBorder.Opacity, 260), "MyCard Sheen " & Uuid, True)
+        AniStart(AaOpacity(SheenBorder, -SheenBorder.Opacity, 240), "MyCard Sheen " & Uuid, True)
     End Sub
 
 #End Region
@@ -369,8 +369,8 @@ Partial Public Module ModAnimation
         If Control.IsHitTestVisible Then
             Control.IsHitTestVisible = False
             AniStart({
-                AaScaleTransform(Control, -0.08, 200,, New AniEaseInFluent),
-                AaOpacity(Control, -1, 200,, New AniEaseOutFluent),
+                AaScaleTransform(Control, -0.08, 240,, New AniEaseInFluent),
+                AaOpacity(Control, -1, 240,, New AniEaseOutFluent),
                 AaHeight(Control, -Control.ActualHeight, 150, 100, New AniEaseOutFluent),
                 AaCode(
                 Sub()

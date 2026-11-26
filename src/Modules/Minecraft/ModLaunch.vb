@@ -1,4 +1,4 @@
-Public Module ModLaunch
+﻿Public Module ModLaunch
 
 #Region "开始"
 
@@ -1154,7 +1154,145 @@ Retry:
 #Region "Java 处理"
 
     Public McLaunchJavaSelected As Java = Nothing
+    Public Function SafeGetSetting(Key As String) As String
+        Try
+            Dim V As String = Settings.Get(Of String)(Key)
+            If V Is Nothing Then Return ""
+            Return V
+        Catch ex As Exception
+            Return ""
+        End Try
+    End Function
+
+    Public Sub ScanSaveHealth()
+        Dim SavesRoot As String = McFolderSelected & "saves"
+        If Not Global.System.IO.Directory.Exists(SavesRoot) Then Exit Sub
+        Dim Problems As New List(Of String)
+        For Each SaveDir As String In Global.System.IO.Directory.GetDirectories(SavesRoot)
+            Dim Name As String = Global.System.IO.Path.GetFileName(SaveDir)
+            Dim LevelDt As String = Global.System.IO.Path.Combine(SaveDir, "level.dat")
+            If Not Global.System.IO.File.Exists(LevelDt) Then
+                Problems.Add(Name & "：缺少 level.dat，存档已损坏")
+                Continue For
+            End If
+            Try
+                Dim Info As New Global.System.IO.FileInfo(LevelDt)
+                If Info.Length < 64 Then
+                    Problems.Add(Name & "：level.dat 只有 " & Info.Length & " 字节，明显损坏")
+                    Continue For
+                End If
+                Using Fs As New Global.System.IO.FileStream(LevelDt, Global.System.IO.FileMode.Open, Global.System.IO.FileAccess.Read, Global.System.IO.FileShare.ReadWrite)
+                    Dim Head(1) As Byte
+                    Fs.Read(Head, 0, 2)
+                    If Not (Head(0) = &H1F AndAlso Head(1) = &H8B) Then
+                        Problems.Add(Name & "：level.dat 头部不是 gzip，文件可能被截断")
+                    End If
+                End Using
+            Catch ex As Exception
+                Problems.Add(Name & "：level.dat 无法读取（" & ex.Message & "）")
+            End Try
+            Dim RegionDir As String = Global.System.IO.Path.Combine(SaveDir, "region")
+            If Global.System.IO.Directory.Exists(RegionDir) Then
+                Dim BadRegion As Integer = 0
+                For Each File As String In Global.System.IO.Directory.GetFiles(RegionDir, "*.mca")
+                    Try
+                        Dim Len As Long = New Global.System.IO.FileInfo(File).Length
+                        If Len < 8192 Then
+                            BadRegion += 1
+                            Continue For
+                        End If
+                        Using Fs As New Global.System.IO.FileStream(File, Global.System.IO.FileMode.Open, Global.System.IO.FileAccess.Read, Global.System.IO.FileShare.ReadWrite)
+                            Dim Buf(4095) As Byte
+                            Fs.Read(Buf, 0, 4096)
+                            For I = 0 To 1023
+                                Dim Off As Integer = (CInt(Buf(I * 4)) << 16) Or (CInt(Buf(I * 4 + 1)) << 8) Or CInt(Buf(I * 4 + 2))
+                                If Off = 0 Then Continue For
+                                If Off < 2 OrElse (CLng(Off) * 4096) >= Len Then
+                                    BadRegion += 1
+                                    Exit For
+                                End If
+                            Next
+                        End Using
+                    Catch ex As Exception
+                        BadRegion += 1
+                    End Try
+                Next
+                If BadRegion > 0 Then Problems.Add(Name & "：" & BadRegion & " 个区域文件头部异常，可能有区块损坏")
+            End If
+        Next
+        If Problems.Count = 0 Then Exit Sub
+        Try
+            McLaunchLog("存档体检发现 " & Problems.Count & " 个问题：")
+            For Each Line As String In Problems
+                McLaunchLog("  " & Line)
+            Next
+        Catch ex As Exception
+        End Try
+        Try
+            Hint("检测到 " & Problems.Count & " 个存档异常，详情见启动日志")
+        Catch ex As Exception
+        End Try
+    End Sub
+
+    Public Function AutoPickJava(Instance As McInstance, Current As Java) As Java
+        If Instance Is Nothing OrElse Current Is Nothing OrElse Current.Version Is Nothing Then Return Current
+        Dim NeedRange = GetJavaRequirement(Instance).Range
+        If NeedRange Is Nothing OrElse NeedRange.IsEmpty Then Return Current
+        If NeedRange.Contains(Current.Version) Then Return Current
+        For Each J In Configs.JavaList.Get()
+            If J Is Nothing OrElse J.Version Is Nothing Then Continue For
+            If Not NeedRange.Contains(J.Version) Then Continue For
+            Try
+                Hint("已自动切换到 Java " & J.Version.ToString)
+                McLaunchLog("自动切换 Java：" & Current.ToString & " → " & J.ToString)
+            Catch ex As Exception
+            End Try
+            Return J
+        Next
+        Return Current
+    End Function
+
+    Public Sub CheckJavaCompat(InstanceName As String, JavaText As String)
+        Dim M = Global.System.Text.RegularExpressions.Regex.Match(InstanceName, "1\.(\d+)")
+        If Not M.Success Then Exit Sub
+        Dim Minor As Integer = 0
+        Integer.TryParse(M.Groups(1).Value, Minor)
+        Dim Need As Integer = 8
+        If Minor >= 61 Then
+            Need = 21
+        ElseIf Minor >= 18 Then
+            Need = 17
+        ElseIf Minor = 17 OrElse Minor = 16 Then
+            Need = 16
+        End If
+        Dim JM = Global.System.Text.RegularExpressions.Regex.Match(JavaText, "(\d+)\.(\d+)")
+        If Not JM.Success Then Exit Sub
+        Dim JMajor As Integer = 0
+        Integer.TryParse(JM.Groups(1).Value, JMajor)
+        If JMajor = 1 Then Integer.TryParse(JM.Groups(2).Value, JMajor)
+        If JMajor > 0 AndAlso JMajor < Need Then
+            Try
+                McLaunchLog("Java 版本不匹配：实例 " & InstanceName & " 需要 Java " & Need & "+，实际 " & JavaText)
+            Catch ex As Exception
+            End Try
+            Dim WarnKey As String = InstanceName & "|" & Need
+            If SafeGetSetting("PclJavaWarn") <> WarnKey Then
+                Settings.Set("PclJavaWarn", WarnKey)
+                Hint("这个版本需要 Java " & Need & " 或更高，当前选中的是 Java " & JMajor & "，很可能启动失败。&#xa;请到 设置 → 启动 → Java 列表 切换。", HintType.Red)
+            End If
+        ElseIf JMajor >= Need Then
+            If SafeGetSetting("PclJavaWarn") = InstanceName & "|8" OrElse SafeGetSetting("PclJavaWarn") = InstanceName & "|16" OrElse SafeGetSetting("PclJavaWarn") = InstanceName & "|17" OrElse SafeGetSetting("PclJavaWarn") = InstanceName & "|21" Then
+                Settings.Set("PclJavaWarn", "")
+            End If
+        End If
+    End Sub
+
+
     Private Sub McLaunchJava(Task As LoaderTask(Of Integer, Integer))
+        Try
+            ScanSaveHealth()
+        Catch ex As Exception
+        End Try
         McLaunchJavaSelected = SelectOrDownloadJava(McInstanceSelected, True, Task.CreateCancellationToken, Task.CreateSyncProgressProvider)
         If Task.IsCanceled Then Return
         If McLaunchJavaSelected Is Nothing Then Throw New OperationCanceledException 'SelectOrDownloadJava 已经会给予适当的提示
@@ -1163,6 +1301,14 @@ Retry:
             McLaunchLog($"Java 版本设置类别：{Settings.Get(Of Integer)("VersionArgumentJavaV2", McInstanceSelected)}")
         End If
         McLaunchLog("选择的 Java：" & McLaunchJavaSelected.ToString)
+        Try
+            McLaunchJavaSelected = AutoPickJava(McInstanceSelected, McLaunchJavaSelected)
+        Catch ex As Exception
+        End Try
+        Try
+            CheckJavaCompat(McInstanceSelected.ToString, McLaunchJavaSelected.ToString)
+        Catch ex As Exception
+        End Try
     End Sub
 
 #End Region
@@ -1310,6 +1456,15 @@ NextInstance:
         McLaunchLog($"初始堆大小：{InitialRam} MB")
         Args.Add("-Xms" & InitialRam & "m")
         Args.Add("-Xmx" & TargetRam & "m")
+        Dim JvmPreset As String = SafeGetSetting("PclJvmPreset")
+        If JvmPreset = "" OrElse JvmPreset = "0" Then
+            If TargetRam >= 4096 Then JvmPreset = "1" Else JvmPreset = "0"
+        End If
+        If JvmPreset = "1" Then
+            Args.AddRange({"-XX:+UseG1GC", "-XX:G1NewSizePercent=20", "-XX:G1ReservePercent=20", "-XX:MaxGCPauseMillis=50", "-XX:G1HeapRegionSize=32M"})
+        ElseIf JvmPreset = "2" Then
+            Args.Add("-XX:+UseZGC")
+        End If
 
         '获取设置的管理方式
         '0：在 Java 21+ 使用分代 ZGC，20~15 使用非分代的 ZGC，14- 使用 G1GC

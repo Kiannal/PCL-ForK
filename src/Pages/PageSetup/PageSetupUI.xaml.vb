@@ -27,11 +27,6 @@ Public Class PageSetupUI
         Reloaded = True
 
         SliderLoad()
-
-
-        '设置解锁
-        If Not RadioLauncherTheme9.IsEnabled Then LabLauncherTheme9Copy.ToolTip = "· 反馈一个 Bug，在标记为 [完成] 后回复识别码要求解锁（右键打开反馈页面）" & vbCrLf & "· 提交一个 Pull Request 或主页预设，在标记为 [完成] 后回复识别码要求解锁"
-        RadioLauncherTheme9.ToolTip = "· 反馈一个 Bug，在标记为 [完成] 后回复识别码要求解锁" & vbCrLf & "· 提交一个 Pull Request 或主页预设，在标记为 [完成] 后回复识别码要求解锁"
         '极客蓝的处理在 ThemeCheck 中
 
     End Sub
@@ -381,7 +376,6 @@ Refresh:
             AaOpacity(RadioLauncherTheme5, -1, 1000 * AniSpeed, 500 * AniSpeed, New AniEaseInFluent)
         }, "ThemeUnlock")
         If RadioLauncherTheme5Gray.Opacity < 0.02 Then
-            ThemeUnlock(5, UnlockHint:="隐藏主题 玄素黑 已解锁！")
             AniStop("ThemeUnlock")
             RadioLauncherTheme5.Checked = True
         End If
@@ -616,6 +610,15 @@ Refresh:
         Dim VideoPath As String = Settings.Get(Of String)("UiBackgroundVideo")
         LabBackgroundVideo.Text = If(String.IsNullOrEmpty(VideoPath), "未选择", VideoPath)
         LabBackgroundVideo.ToolTip = LabBackgroundVideo.Text
+        Dim Items As List(Of ModWallpaperDefaults.WallpaperItem) = ModWallpaperDefaults.GetManifest()
+        PanBackgroundBuiltin.Visibility = If(Items.Any(), Visibility.Visible, Visibility.Collapsed)
+        Dim CurrentIndex As Integer = Items.FindIndex(Function(Item) String.Equals(ModWallpaperDefaults.GetLocalPath(Item), VideoPath, StringComparison.OrdinalIgnoreCase))
+        LabBackgroundBuiltin.Text = If(Items.Any(),
+            $"共 {Items.Count} 个" & If(CurrentIndex >= 0, $"，当前第 {CurrentIndex + 1} 个", ""),
+            "")
+        LabBackgroundBuiltin.ToolTip = If(Items.Any(),
+            String.Join(vbCrLf, Items.Select(Function(Item) Item.Title & If(ModWallpaperDefaults.IsLocalReady(Item), "", "（未下载）"))),
+            "")
     End Sub
     Private Sub ComboBackgroundType_SelectionChanged(sender As Object, e As SelectionChangedEventArgs) Handles ComboBackgroundType.SelectionChanged
         If AniControlEnabled <> 0 Then Return
@@ -630,6 +633,21 @@ Refresh:
         Settings.Set("UiBackgroundType", 1)
         RefreshBackgroundMode()
         FrmMain.UpdateBackgroundAndTitleBar()
+    End Sub
+    Private Sub BtnBackgroundBuiltin_Click(sender As Object, e As EventArgs) Handles BtnBackgroundBuiltin.Click
+        Dim NextName As String = Nothing
+        Try
+            NextName = ModWallpaperDefaults.SwitchToNext()
+        Catch ex As Exception
+            Logger.Warn(ex, "切换内置壁纸失败")
+        End Try
+        If NextName Is Nothing Then
+            Hint($"内置壁纸目录为空：{ModWallpaperDefaults.WallpaperFolder}", HintType.Red)
+            Return
+        End If
+        RefreshBackgroundMode()
+        FrmMain.UpdateBackgroundAndTitleBar()
+        Hint($"已切换到内置壁纸：{NextName}", HintType.Green)
     End Sub
     Private Sub BtnBackgroundWe_Click(sender As Object, e As EventArgs) Handles BtnBackgroundWe.Click
         Dim SyncResult As Integer = ModWallpaperEngine.WeSync(True)

@@ -99,10 +99,13 @@ RetryCacheCheck:
             ToolTipService.InitialShowDelayProperty.OverrideMetadata(GetType(DependencyObject), New FrameworkPropertyMetadata(100))
             '设置网络配置默认值
             ServicePointManager.Expect100Continue = False
-            ServicePointManager.DefaultConnectionLimit = 96
+            ServicePointManager.DefaultConnectionLimit = 256
             ServicePointManager.UseNagleAlgorithm = False
             ServicePointManager.EnableDnsRoundRobin = True
             ServicePointManager.ReusePort = True
+            '关闭默认代理探测，避免每个请求先查一次系统代理
+            ServicePointManager.EnableDnsRoundRobin = True
+            Net.WebRequest.DefaultWebProxy = Nothing
             If Environment.OSVersion.Version < New Version(6, 2) Then 'Windows 7 回退（#8519）
                 ServicePointManager.SecurityProtocol = SecurityProtocolType.Ssl3 Or SecurityProtocolType.Tls Or SecurityProtocolType.Tls11 Or SecurityProtocolType.Tls12
             End If

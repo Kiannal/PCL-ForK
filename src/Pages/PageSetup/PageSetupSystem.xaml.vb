@@ -1,4 +1,4 @@
-Public Class PageSetupSystem
+﻿Public Class PageSetupSystem
 
 
     Private Sub PageSetupSystem_Loaded(sender As Object, e As RoutedEventArgs) Handles Me.Loaded
@@ -115,5 +115,105 @@ Public Class PageSetupSystem
     End Sub
 
 #End Region
+
+    Private Sub BtnFeedbackOpen_Click(sender As Object, e As MouseButtonEventArgs)
+        PanFeedback.Visibility = Visibility.Visible
+        TextFeedback.Focus()
+    End Sub
+
+    Private Sub BtnFeedbackClose_Click(sender As Object, e As MouseButtonEventArgs)
+        PanFeedback.Visibility = Visibility.Collapsed
+    End Sub
+
+    Private Function FeedbackNick() As String
+        Try
+            Dim ms As String = Settings.Get(Of String)("CacheMsV2Name")
+            If Not String.IsNullOrWhiteSpace(ms) Then Return ms.Trim()
+        Catch
+        End Try
+        Try
+            Dim auth As String = Settings.Get(Of String)("CacheAuthUsername")
+            If Not String.IsNullOrWhiteSpace(auth) Then Return "[第三方账号]" & auth.Trim()
+        Catch
+        End Try
+        Try
+            Dim legacy As String = Settings.Get(Of String)("LoginLegacyName")
+            If legacy.Contains("¨") Then legacy = legacy.BeforeFirst("¨")
+            legacy = legacy.Replace("¨", "").Trim()
+            If Not String.IsNullOrWhiteSpace(legacy) Then Return "[离线账号]" & legacy
+        Catch
+        End Try
+        Return "匿名"
+    End Function
+
+
+    Private Function FeedbackText() As String
+        Try
+            Return If(TextFeedback.Text, "")
+        Catch
+            Return ""
+        End Try
+    End Function
+
+    Private Sub BtnFeedbackSend_Click(sender As Object, e As MouseButtonEventArgs)
+        Dim body As String = FeedbackText().Trim()
+
+        Logger.Info("[Feedback] 取到正文长度：" & body.Length)
+        If body.Length = 0 Then
+            MyMsgBox("输入框里还没有内容：请先在多行输入框中填写问题描述，再点发送。", "问题反馈", IsWarn:=True)
+            Return
+        End If
+        Dim nick As String = FeedbackNick()
+        Dim ver As String = ""
+        Try
+            ver = Reflection.Assembly.GetExecutingAssembly().GetName().Version.ToString()
+        Catch
+        End Try
+        BtnFeedbackSend.IsEnabled = False
+        RunInNewThread(
+            Sub()
+                Try
+                    Using wc As New System.Net.WebClient()
+                        wc.Encoding = System.Text.Encoding.UTF8
+                        wc.Proxy = Nothing
+                        wc.Headers("Content-Type") = "application/x-www-form-urlencoded"
+                        wc.Headers.Add("User-Agent", "PCL-ForK")
+                        Dim resp As String = wc.UploadString(ModMain.PclUrl("MkXol2Aes9ZiCLLWagSy0W8frtZjC6TfYwizgT9U+IU7UvfJKlns"), "name=" & Uri.EscapeDataString(nick) & "&version=" & Uri.EscapeDataString(ver) & "&content=" & Uri.EscapeDataString(body))
+                        Logger.Info("[Feedback] 服务器返回：" & resp)
+                        If resp.Contains("""ok"":false") Then
+                            RunInUi(Sub()
+                                        BtnFeedbackSend.IsEnabled = True
+                                        MyMsgBox("服务器没有收录这条反馈，返回：" & resp, "问题反馈", IsWarn:=True)
+                                    End Sub)
+                            Return
+                        End If
+                    End Using
+                    RunInUi(Sub()
+                                BtnFeedbackSend.IsEnabled = True
+                                PanFeedback.Visibility = Visibility.Collapsed
+                                TextFeedback.Text = ""
+                                MyMsgBox("反馈已发送，感谢你的反馈！", "问题反馈")
+                            End Sub)
+                Catch ex As Exception
+                    Logger.Warn(ex, "[Feedback] 发送失败")
+                    RunInUi(Sub()
+                                BtnFeedbackSend.IsEnabled = True
+                                MyMsgBox("发送失败：" & ex.Message, "问题反馈", IsWarn:=True)
+                            End Sub)
+                End Try
+            End Sub, "FeedbackSend")
+    End Sub
+
+
+    Private Sub BtnFeedback_Wire(sender As Object, e As RoutedEventArgs) Handles Me.Loaded
+        AddHandler BtnWelfare.Click,
+            Sub()
+                Hint("正在向服务器查询兑换码…", HintType.Blue)
+                ModSecret.WelfareCheck(Force:=True)
+            End Sub
+        AddHandler BtnFeedbackOpen.Click, AddressOf BtnFeedbackOpen_Click
+        AddHandler BtnFeedbackSend.Click, AddressOf BtnFeedbackSend_Click
+        AddHandler BtnFeedbackClose.Click, AddressOf BtnFeedbackClose_Click
+    End Sub
 
 End Class

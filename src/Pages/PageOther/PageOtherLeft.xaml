@@ -1,8 +1,12 @@
-<local:MyPageLeft x:Class="PageOtherLeft"
+﻿<local:MyPageLeft x:Class="PageOtherLeft"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:PCL" AnimatedControl="PanItem">
     <StackPanel Margin="0,12,0,0" Name="PanItem">
+        <local:MyListItem x:Name="ItemHelp" IsScaleAnimationEnabled="False" Tag="0" MinPaddingRight="35" Type="RadioBox" Height="36"
+                          VerticalAlignment="Top" Title="帮助" LogoScale="0.95" Logo="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 2a8 8 0 1 1 0 16 8 8 0 0 1 0-16zm0 3a3 3 0 0 0-3 3h2a1 1 0 1 1 2 0c0 .6-.4.9-.9 1.1-.9.4-1.1 1-1.1 1.9v1h2v-1c0-.3.1-.4.4-.5 1-.4 1.6-1.2 1.6-2.5a3 3 0 0 0-3-3zm-1 9h2v2h-2z" />
+        <local:MyListItem x:Name="ItemAbout" IsScaleAnimationEnabled="False" Tag="1" MinPaddingRight="35" Type="RadioBox" Height="36"
+                          VerticalAlignment="Top" Title="关于" LogoScale="0.95" Logo="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 2a8 8 0 1 1 0 16 8 8 0 0 1 0-16zm1 13h-2v-7h2zm0-9h-2V6h2z" />
         <local:MyListItem x:Name="ItemTest" IsScaleAnimationEnabled="False" Tag="2" MinPaddingRight="35" Type="RadioBox" Height="36" VerticalAlignment="Top" Title="百宝箱"
                           LogoScale="0.97" Logo="M511 995a128 128 0 0 1-57-13L70 791a126 126 0 0 1-70-113V311a126 126 0 0 1 15-60V248c1-2 3-5 5-8a127 127 0 0 1 49-42L454 13a128 128 0 0 1 112 0l383 190a126 126 0 0 1 72 113v360a126 126 0 0 1-70 115L568 984c-17 7-37 11-57 11z m42-470v370l360-178c14-7 23-21 23-38v-335L554 524zM85 330v347a42 42 0 0 0 23 38l360 178V523L85 330zM135 260l375 189 137-65L286 188 135 260z m245-118l363 197 150-71-365-180a42 42 0 0 0-37 0l-111 53z" />
         <local:MyListItem x:Name="ItemSkin" IsScaleAnimationEnabled="False" Type="RadioBox" Tag="5" MinPaddingRight="35" Height="36" VerticalAlignment="Top" Title="皮肤库"
@@ -11,6 +15,8 @@
                           LogoScale="0.95" Logo="M12 2l9 4.9v10.2L12 22l-9-4.9V6.9L12 2zm0 2.3L5 8v8l7 3.9V4.3z" />
         <local:MyListItem x:Name="ItemModdev" Visibility="Collapsed" IsScaleAnimationEnabled="False" Type="RadioBox" Tag="7" MinPaddingRight="35" Height="36" VerticalAlignment="Top" Title="Mod 开发"
                           LogoScale="0.95" Logo="M15.5 2.5l6 3.4v8.2l-6 3.4-6-3.4V5.9l6-3.4zm0 2.2L10.9 7 15.5 9.6 20.1 7l-4.6-2.3zM10 8.5v6.4l4.6 2.6v-6.4L10 8.5zm6.4 9l4.6-2.6V8.5l-4.6 2.6v6.4z" />
+        <local:MyListItem x:Name="ItemNetEase" IsScaleAnimationEnabled="False" Type="RadioBox" Tag="9" MinPaddingRight="35" Height="36" VerticalAlignment="Top" Title="网易中国版"
+                          LogoScale="0.95" Logo="M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20zm0 2.2a7.8 7.8 0 0 0-7.8 7.8h3.1A4.7 4.7 0 0 1 12 7.3V4.2zm0 15.6v-3.1a4.7 4.7 0 0 1-4.7-4.7H4.2A7.8 7.8 0 0 0 12 19.8zm7.8-7.8H16.7A4.7 4.7 0 0 1 12 16.7v3.1a7.8 7.8 0 0 0 7.8-7.8zm-3.1-2.4h3.1A7.8 7.8 0 0 0 12 4.2v3.1a4.7 4.7 0 0 1 4.7 4.7z" />
         <local:MyListItem x:Name="ItemAI" IsScaleAnimationEnabled="False" Type="RadioBox" Tag="8" MinPaddingRight="35" Height="36" VerticalAlignment="Top" Title="AI 助手"
                           LogoScale="0.95" Logo="M12 2l2.2 5.6L20 9.8l-5.8 2.2L12 18l-2.2-6L4 9.8l5.8-2.2L12 2zm7 12l1.2 3L23 18l-2.8 1L19 22l-1.2-3L15 18l2.8-1L19 14z" />
     </StackPanel>

@@ -85,6 +85,10 @@ Public Class MyResourceItem
         Return False
     End Function
     Private Sub MyResourceItem_Click(sender As MyResourceItem, e As EventArgs) Handles Me.Click
+        'PCL 资源地图页自带点击处理，不走内置的详情页跳转
+        If SkipDefaultClick Then Return
+        If FrmMain Is Nothing Then Return
+        If FrmMain.PageCurrentSub = FormMain.PageSubType.DownloadMap Then Return
         '记录当前展开的卡片标题（#2712）
         Dim Titles As New List(Of String)
         If FrmMain.PageCurrent.Page = FormMain.PageType.ResourceDetail Then
@@ -175,6 +179,11 @@ Public Class MyResourceItem
     ''' 是否允许交互。目前仅用于 PageDownloadResourceDetail 的顶部栏展示：若关闭碰撞检测，则无法展开 Tooltip。
     ''' </summary>
     Public Property CanInteraction As Boolean = True
+
+    ''' <summary>
+    ''' 跳过内置的详情页跳转，由调用方自行处理 Click。
+    ''' </summary>
+    Public Property SkipDefaultClick As Boolean = False
     Public Sub RefreshColor(sender As Object, e As EventArgs) Handles Me.MouseEnter, Me.MouseLeave, Me.MouseLeftButtonDown, Me.MouseLeftButtonUp
         If Not CanInteraction Then Return
         '判断当前颜色

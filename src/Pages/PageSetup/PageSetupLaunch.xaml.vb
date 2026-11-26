@@ -1,4 +1,4 @@
-Public Class PageSetupLaunch
+﻿Public Class PageSetupLaunch
 
     Private Sub PageSetupLaunch_Loaded(sender As Object, e As RoutedEventArgs) Handles Me.Loaded
         '重复加载部分

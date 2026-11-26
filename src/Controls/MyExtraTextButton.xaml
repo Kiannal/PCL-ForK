@@ -1,4 +1,4 @@
-<Grid
+﻿<Grid
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="clr-namespace:PCL"
@@ -17,7 +17,7 @@
         <Border x:Name="PanColor" BorderThickness="0.001" Background="{DynamicResource ColorBrush3}"
                 CornerRadius="{Binding ActualHeight, ConverterParameter=0.4, Converter={StaticResource MultiplicationConverter}, ElementName=PanBack, Mode=OneWay}">
             <Border.Effect>
-                <DropShadowEffect ShadowDepth="0" BlurRadius="10" Opacity="0.2" />
+                <DropShadowEffect ShadowDepth="0" BlurRadius="8" Opacity="0.2" />
             </Border.Effect>
         </Border>
         <StackPanel Orientation="Horizontal" Margin="20,0" SnapsToDevicePixels="False" UseLayoutRounding="False">

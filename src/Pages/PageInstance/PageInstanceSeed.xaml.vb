@@ -1,4 +1,4 @@
-Imports System.Windows.Media.Imaging
+﻿Imports System.Windows.Media.Imaging
 
 Public Class PageInstanceSeed
 
@@ -34,6 +34,7 @@ Public Class PageInstanceSeed
     Private CurrentSeed As String = ""
     Private GeneratedKey As String = ""
     Private BiomePixels As Integer(,) = Nothing
+    Private MarkerDrawn As Integer = 0
     Private BiomeNames As New Dictionary(Of Integer, String)
     Private MapScaleValue As Integer = 4
 
@@ -300,6 +301,11 @@ Public Class PageInstanceSeed
             End Sub, "SeedMapGenerate")
     End Sub
 
+
+    Private Shared Function ToBgra(ColorValue As Color) As Integer
+        Return (CInt(ColorValue.B) << 24) Or (CInt(ColorValue.G) << 16) Or (CInt(ColorValue.R) << 8) Or CInt(ColorValue.A)
+    End Function
+
     Private Sub RenderMap(Data As JObject, Elapsed As Double)
         CurrentData = Data
         MapSize = CInt(Data("size"))
@@ -320,34 +326,38 @@ Public Class PageInstanceSeed
             BiomeNames(BiomeId) = Item("name").ToString()
         Next
 
-        Dim Bitmap As New WriteableBitmap(MapSize, MapSize, 96, 96, PixelFormats.Bgra32, Nothing)
-        Dim Pixels(MapSize * MapSize * 4 - 1) As Byte
-        For I = 0 To MapSize * MapSize - 1
-            Pixels(I * 4) = 150
-            Pixels(I * 4 + 1) = 156
-            Pixels(I * 4 + 2) = 164
-            Pixels(I * 4 + 3) = 255
+        Dim PaletteBgra As New Dictionary(Of Integer, Integer)
+        For Each Item As JObject In CType(Data("palette"), JArray)
+            PaletteBgra(CInt(Item("id"))) = ToBgra(GetBiomeColor(Item("name").ToString()))
         Next
-        Dim Biomes As JArray = CType(Data("biomes"), JArray)
+        Dim PaletteNames As New Dictionary(Of Integer, String)
+        For Each Item As JObject In CType(Data("palette"), JArray)
+            PaletteNames(CInt(Item("id"))) = Item("name").ToString()
+        Next
+        Dim DefaultBgra As Integer = ToBgra(Color.FromRgb(150, 156, 164))
+        Dim PixelData(MapSize * MapSize - 1) As Integer
+        Dim BiomeRows As JArray = CType(Data("biomes"), JArray)
         ReDim BiomePixels(MapSize - 1, MapSize - 1)
-        Dim RowIndex As Integer = 0
-        For Each Row As JArray In Biomes
-            Dim ColumnIndex As Integer = 0
-            For Each Cell As JToken In Row
-                Dim BiomeId As Integer = CInt(Cell)
+        Dim RowCount As Integer = Math.Min(BiomeRows.Count, MapSize)
+        For RowIndex = 0 To RowCount - 1
+            Dim Ids As Integer() = Nothing
+            Try
+                Ids = BiomeRows(RowIndex).ToObject(Of Integer())()
+            Catch
+                Ids = Nothing
+            End Try
+            If Ids Is Nothing Then Continue For
+            Dim ColCount As Integer = Math.Min(Ids.Length, MapSize)
+            Dim Base As Integer = RowIndex * MapSize
+            For ColumnIndex = 0 To ColCount - 1
+                Dim BiomeId As Integer = Ids(ColumnIndex)
                 BiomePixels(ColumnIndex, RowIndex) = BiomeId
-                Dim ColorValue As Color
-                If Not Palette.TryGetValue(BiomeId, ColorValue) Then ColorValue = Color.FromRgb(150, 156, 164)
-                Dim Offset As Integer = (RowIndex * MapSize + ColumnIndex) * 4
-                Pixels(Offset) = ColorValue.B
-                Pixels(Offset + 1) = ColorValue.G
-                Pixels(Offset + 2) = ColorValue.R
-                Pixels(Offset + 3) = 255
-                ColumnIndex += 1
+                Dim ColorValue As Integer
+                If Not PaletteBgra.TryGetValue(BiomeId, ColorValue) Then ColorValue = DefaultBgra
+                PixelData(Base + ColumnIndex) = ColorValue
             Next
-            RowIndex += 1
         Next
-        Bitmap.WritePixels(New Int32Rect(0, 0, MapSize, MapSize), Pixels, MapSize * 4, 0)
+        Dim Bitmap As BitmapSource = BitmapSource.Create(MapSize, MapSize, 96, 96, PixelFormats.Bgra32, Nothing, PixelData, MapSize * 4)
         ImgMap.Source = Bitmap
         ImgMap.Width = MapSize
         ImgMap.Height = MapSize
@@ -415,6 +425,8 @@ Public Class PageInstanceSeed
     End Sub
 
     Private Sub AddMapMarker(Kind As StructureKind, BlockX As Integer, BlockZ As Integer)
+        If MarkerDrawn >= 600 Then Return
+        MarkerDrawn += 1
         If Kind Is Nothing Then Return
         Dim PixelX As Double = (BlockX - MapX0) / (2.0 * MapRadius) * MapSize
         Dim PixelZ As Double = (BlockZ - MapZ0) / (2.0 * MapRadius) * MapSize

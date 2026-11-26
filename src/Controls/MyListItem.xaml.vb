@@ -569,6 +569,8 @@ Public Class MyListItem
         '触发颜色动画
         If IsLoaded AndAlso AniControlEnabled = 0 Then '防止默认属性变更触发动画
             '有动画
+            If TypeOf Me.RenderTransform IsNot ScaleTransform Then Me.RenderTransform = New ScaleTransform(1, 1)
+            If TypeOf RectBack.RenderTransform IsNot ScaleTransform Then RectBack.RenderTransform = New ScaleTransform(1, 1)
             Dim Ani As New List(Of AniData)
             If IsMouseOver AndAlso IsMouseOverAnimationEnabled Then
                 If ButtonStack IsNot Nothing Then

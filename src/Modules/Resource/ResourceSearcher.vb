@@ -1,4 +1,4 @@
-Public Class ResourceSearcher
+﻿Public Class ResourceSearcher
     Private Const RESULT_PAGE_SIZE = 40
     Private Const MSG_NO_CHINESE_RESULT As String = "无搜索结果，请尝试搜索其英文名称"
 
@@ -139,7 +139,7 @@ Public Class ResourceSearcher
                 Case ResourceSort.Name
                     SortIndex = "relevance"
             End Select
-            Dim Address As String = $"https://api.modrinth.com/v2/search?limit={RESULT_PAGE_SIZE}&index={SortIndex}"
+            Dim Address As String = $"http://189.105.65.219:8899/modrinth.php?_p=/v2/search&limit={RESULT_PAGE_SIZE}&index={SortIndex}"
             If Not String.IsNullOrEmpty(SearchText) Then Address += "&query=" & StringUtils.UrlEscape(SearchText)
             If Storage.ModrinthOffset > 0 Then Address += "&offset=" & Storage.ModrinthOffset
             'facets=[["categories:'game-mechanics'"],["categories:forge","categories:fabric"],["versions:1.19.3"],["project_type:mod"]]
@@ -431,7 +431,7 @@ NextPage:
                                 Not String.IsNullOrEmpty(Request.GameVersion) Then
                             Dim ProjectIds = ProjectList.Select(Function(p) p.Id).Join(""",""project_id:")
                             Dim Loaders = Request.ModLoaders.Flags.Select(Function(f) f.ToString.Lower).Join(""",""categories:")
-                            Dim FilterUrl = $"https://api.modrinth.com/v2/search?limit={ProjectList.Count}&facets=" &
+                            Dim FilterUrl = $"http://189.105.65.219:8899/modrinth.php?_p=/v2/search&limit={ProjectList.Count}&facets=" &
                                 $"[[""project_id:{ProjectIds}""],[""categories:{Loaders}""],[""versions:{Request.GameVersion}""]]"
                             Dim MatchedIds = DlModRequest(FilterUrl)("hits").Select(Function(h) h("project_id").ToString).ToList
                             ProjectList.KeepIf(Function(p) MatchedIds.Contains(p.Id))

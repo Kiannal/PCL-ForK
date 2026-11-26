@@ -1,4 +1,4 @@
-Imports System.Collections.ObjectModel
+﻿Imports System.Collections.ObjectModel
 Imports System.Windows.Interop
 Imports System.Windows.Threading
 
@@ -378,12 +378,14 @@ EndHint:
 
     '下载页面声明
     Public FrmDownloadLeft As PageDownloadLeft
+Public FrmDownloadUpload As PageDownloadUpload
     Public FrmDownloadInstall As PageDownloadInstall
     Public FrmDownloadMod As PageDownloadMod
     Public FrmDownloadPack As PageDownloadPack
     Public FrmDownloadDataPack As PageDownloadDataPack
     Public FrmDownloadShader As PageDownloadShader
     Public FrmDownloadResourcePack As PageDownloadResourcePack
+    Public FrmDownloadMap As PageDownloadMap
 
     '设置页面声明
     Public FrmSetupLeft As PageSetupLeft
@@ -401,6 +403,8 @@ EndHint:
     Public FrmOtherLitematic As PageOtherLitematic
     Public FrmOtherModdev As PageOtherModdev
     Public FrmOtherAI As PageOtherAI
+    Public FrmOtherNetEase As PageOtherNetEase
+    Public FrmOtherChat As PageOtherChat
 
     '登录页面声明
     Public FrmLoginLegacy As PageLoginLegacy
@@ -424,7 +428,6 @@ EndHint:
     Public FrmInstanceSeed As PageInstanceSeed
     Public FrmDownloadModify As PageDownloadModify
 Public FrmExperiment As PageExperiment
-    Public FrmSkinPaint As PageSkinPaint
 Public FrmExperimentLeft As PageExperimentLeft
 
     '资源信息分页声明
@@ -1090,5 +1093,300 @@ NextFile:
             End Try
         End Sub, "Timer Main Fool")
     End Sub
+
+
+    Public PclSourceType As String = ""
+    Public Event PclSourceRequested(TypeKey As String)
+
+    Public Sub RequestPclSource(TypeKey As String)
+        PclSourceType = If(TypeKey, "")
+        RaiseEvent PclSourceRequested(PclSourceType)
+    End Sub
+
+#Region "PCL-ForK 页面禁用"
+
+    Public ReadOnly PclDisabledPages As New List(Of String)
+    Public PclLockText As String = ""
+
+
+    Public Sub DownloadAndApplyUpdate(Url As String, Optional PatchUrl As String = "")
+        RunInNewThread(
+            Sub()
+                Try
+                    Dim NewExe As String = IO.Path.Combine(PathTemp, "PCLForK_new.exe")
+                    If IO.File.Exists(NewExe) Then IO.File.Delete(NewExe)
+                    Dim Self As String = Reflection.Assembly.GetEntryAssembly().Location
+                    Dim UsedPatch As Boolean = False
+
+                    '优先尝试增量补丁，失败再退回完整包
+                    If PatchUrl IsNot Nothing AndAlso PatchUrl.Length > 0 Then
+                        Try
+                            Dim PatchFile As String = IO.Path.Combine(PathTemp, "PCLForK.patch")
+                            If IO.File.Exists(PatchFile) Then IO.File.Delete(PatchFile)
+                            RunInUi(Sub() Hint("正在下载增量补丁…"))
+                            NetDownloadByLoader(PatchUrl, PatchFile)
+                            Dim PatchKb As Double = New FileInfo(PatchFile).Length / 1024.0
+                            Logger.Info("[PCLForK] 补丁下载完成 " & PatchKb.ToString("0.0") & " KB")
+                            If ModUpdatePatch.PatchMatches(Self, PatchFile) Then
+                                RunInUi(Sub() Hint("正在应用增量更新…"))
+                                If ModUpdatePatch.ApplyPatch(Self, PatchFile, NewExe) Then
+                                    UsedPatch = True
+                                    Logger.Info("[PCLForK] 增量更新应用成功")
+                                Else
+                                    Logger.Warn("[PCLForK] 增量更新应用失败，回退完整包")
+                                End If
+                            Else
+                                Logger.Warn("[PCLForK] 补丁不适用于当前版本，回退完整包")
+                            End If
+                            Try
+                                IO.File.Delete(PatchFile)
+                            Catch
+                            End Try
+                        Catch ex As Exception
+                            Logger.Warn(ex, "[PCLForK] 增量更新过程异常，回退完整包")
+                        End Try
+                    End If
+
+                    If Not UsedPatch Then
+                        If IO.File.Exists(NewExe) Then IO.File.Delete(NewExe)
+                        RunInUi(Sub() Hint("正在下载完整安装包…"))
+                        NetDownloadByLoader(Url, NewExe)
+                    End If
+
+                    If Not IO.File.Exists(NewExe) Then Throw New Exception("更新文件下载失败")
+                    Dim Bat As String = IO.Path.Combine(PathTemp, "pclfk_update.bat")
+                    Dim Lines As String() = {
+                        "@echo off",
+                        "timeout /t 2 /nobreak >nul",
+                        ":retry",
+                        "move /y """ & NewExe & """ """ & Self & """ >nul 2>&1",
+                        "if errorlevel 1 (timeout /t 1 /nobreak >nul & goto retry)",
+                        "start """" """ & Self & """",
+                        "del ""%~f0"""
+                    }
+                    IO.File.WriteAllLines(Bat, Lines, Global.System.Text.Encoding.Default)
+                    Process.Start(New ProcessStartInfo(Bat) With {
+                        .WindowStyle = ProcessWindowStyle.Hidden,
+                        .CreateNoWindow = True,
+                        .UseShellExecute = True
+                    })
+                    RunInUi(Sub() End)
+                Catch ex As Exception
+                    Logger.Error(ex, "下载更新失败")
+                    RunInUi(Sub() Hint("更新失败：" & ex.Message, HintType.Red))
+                End Try
+            End Sub, "下载更新")
+    End Sub
+
+    Public Function PclDeviceId() As String
+        Dim Id As String = ""
+        Dim Path As String = IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "PCL-ForK", "device.id")
+        Try
+            If IO.File.Exists(Path) Then
+                Id = IO.File.ReadAllText(Path, Global.System.Text.Encoding.UTF8).Trim()
+            End If
+        Catch
+        End Try
+        If Id Is Nothing OrElse Id.Length < 8 Then
+            Id = Guid.NewGuid().ToString("N")
+            Try
+                IO.Directory.CreateDirectory(IO.Path.GetDirectoryName(Path))
+                IO.File.WriteAllText(Path, Id, Global.System.Text.Encoding.UTF8)
+            Catch
+            End Try
+        End If
+        Return Id
+    End Function
+
+
+    Public Sub NetEaseLockTip()
+        If FormMain.PclLockShowAction IsNot Nothing Then RunInUi(Sub() FormMain.PclLockShowAction("netease"))
+    End Sub
+
+    Public Sub PageLockTipHide()
+        If FormMain.PclLockHideAction IsNot Nothing Then RunInUi(Sub() FormMain.PclLockHideAction())
+    End Sub
+
+
+    Public Sub UpdateCheckAtStartup()
+        Try
+            ModSecret.UpdateCheckSilent()
+        Catch
+        End Try
+        Try
+            ModSecret.NoticeCheck()
+        Catch
+        End Try
+        Try
+            ModSecret.WelfareStartPlayTimer()
+        Catch
+        End Try
+        Try
+            ModSecret.WelfareCheck()
+        Catch
+        End Try
+    End Sub
+
+    Public Sub ChatPoll()
+        Try
+            PclLastChat = PclGet(PclUrl("@@CHAT@@"))
+        Catch
+        End Try
+    End Sub
+
+
+
+
+    Public Function JsonNum(Raw As String, Key As String) As Long
+        Dim K As String = """" & Key & """" & ":"
+        Dim I As Integer = Raw.IndexOf(K, StringComparison.Ordinal)
+        If I < 0 Then Return 0
+        Dim S As Integer = I + K.Length
+        While S < Raw.Length AndAlso (Raw(S) = " "c OrElse Raw(S) = Chr(9) OrElse Raw(S) = Chr(10) OrElse Raw(S) = Chr(13))
+            S += 1
+        End While
+        Dim E As Integer = S
+        While E < Raw.Length AndAlso (Char.IsDigit(Raw(E)) OrElse Raw(E) = "-"c)
+            E += 1
+        End While
+        If E <= S Then Return 0
+        Dim V As Long = 0
+        Long.TryParse(Raw.Substring(S, E - S), V)
+        Return V
+    End Function
+
+    Public Function JsonArr(Raw As String, Key As String) As String
+        Dim K As String = """" & Key & """" & ":"
+        Dim I As Integer = Raw.IndexOf(K, StringComparison.Ordinal)
+        If I < 0 Then Return ""
+        Dim S As Integer = Raw.IndexOf("["c, I)
+        Dim E As Integer = Raw.IndexOf("]"c, S)
+        If S < 0 OrElse E <= S Then Return ""
+        Dim Body As String = Raw.Substring(S + 1, E - S - 1)
+        Dim Out As New Text.StringBuilder
+        For Each Part As String In Body.Split(New String() {""","""}, StringSplitOptions.RemoveEmptyEntries)
+            Dim T As String = Part.Trim().Trim(""""c).Trim()
+            If T.Length > 0 Then Out.AppendLine("· " & T)
+        Next
+        Return Out.ToString().TrimEnd()
+    End Function
+
+    Public Function JsonStr(Raw As String, Key As String) As String
+        Dim K As String = """" & Key & """"
+        Dim I As Integer = Raw.IndexOf(K, StringComparison.Ordinal)
+        If I < 0 Then Return ""
+        Dim C As Integer = Raw.IndexOf(":"c, I + K.Length)
+        If C < 0 Then Return ""
+        Dim S As Integer = Raw.IndexOf(""""c, C)
+        If S < 0 Then Return ""
+        Dim E As Integer = Raw.IndexOf(""""c, S + 1)
+        If E < 0 Then Return ""
+        Return Raw.Substring(S + 1, E - S - 1)
+    End Function
+
+    Public Function PclGet(Url As String) As String
+        Try
+            Dim Req As Net.HttpWebRequest = CType(Net.WebRequest.Create(Url), Net.HttpWebRequest)
+            Req.Timeout = 4000
+            Req.ReadWriteTimeout = 4000
+            Req.UserAgent = "PCL-ForK"
+            Dim Resp As Net.HttpWebResponse = CType(Req.GetResponse(), Net.HttpWebResponse)
+            Try
+                Dim Sr As New IO.StreamReader(Resp.GetResponseStream(), Text.Encoding.UTF8)
+                Return Sr.ReadToEnd()
+            Finally
+                Resp.Close()
+            End Try
+        Catch
+            Return ""
+        End Try
+    End Function
+
+    Public PclLastUpdate As String = ""
+    Public PclLastChat As String = ""
+
+
+    Public Function PclUrl(Cipher As String) As String
+        Dim Raw As Byte() = Convert.FromBase64String(Cipher)
+        Dim K As Byte() = {&H5A, &H31, &H9C, &HE7}
+        For I As Integer = 0 To Raw.Length - 1
+            Raw(I) = CByte(Raw(I) Xor K(I Mod K.Length))
+        Next
+        Return Text.Encoding.UTF8.GetString(Raw)
+    End Function
+
+
+    Public Sub PageLockRefresh()
+        Dim Th As New Threading.Thread(
+            Sub()
+                Try
+                    Using Wc As New Net.WebClient()
+                        Wc.Encoding = Text.Encoding.UTF8
+                        Wc.Proxy = Nothing
+                        Wc.Headers.Add("User-Agent", "PCL-ForK")
+                        Dim Raw As String = Wc.DownloadString(PclUrl("MkXol2Aes9ZiCLLWagSy0W8frtZjC6TfYwizlztW+ZR0QfSX"))
+                        Dim Keys As New List(Of String)
+                        Dim P As Integer = Raw.IndexOf("""disabled""", StringComparison.Ordinal)
+                        If P >= 0 Then
+                            Dim LB As Integer = Raw.IndexOf("["c, P)
+                            Dim RB As Integer = Raw.IndexOf("]"c, LB + 1)
+                            If LB >= 0 AndAlso RB > LB Then
+                                For Each M As Text.RegularExpressions.Match In Text.RegularExpressions.Regex.Matches(Raw.Substring(LB, RB - LB), "([a-z_]+)")
+                                    Keys.Add(M.Groups(1).Value)
+                                Next
+                            End If
+                        End If
+                                                Dim TP As Integer = Raw.IndexOf("""text""", StringComparison.Ordinal)
+                        Dim Txt As String = ""
+                        If TP >= 0 Then
+                            Dim QS As Integer = Raw.IndexOf(""""c, Raw.IndexOf(":"c, TP))
+                            If QS >= 0 Then
+                                Dim QE As Integer = Raw.IndexOf(""""c, QS + 1)
+                                If QE > QS Then Txt = Raw.Substring(QS + 1, QE - QS - 1)
+                            End If
+                        End If
+                        PclLockText = Txt
+                        SyncLock PclDisabledPages
+                            PclDisabledPages.Clear()
+                            PclDisabledPages.AddRange(Keys)
+                        End SyncLock
+                    End Using
+                Catch
+                End Try
+            End Sub) With {.IsBackground = True}
+        Th.Start()
+    End Sub
+
+    Public Function PageLockIsLocked(Key As String) As Boolean
+        If Key.Length = 0 Then Return False
+        SyncLock PclDisabledPages
+            Return PclDisabledPages.Contains(Key)
+        End SyncLock
+    End Function
+
+    Public Function PageLockName(Key As String) As String
+        If Key = "netease" Then Return "我的世界网易"
+        Select Case Key
+            Case "launch"
+                Return "启动页"
+            Case "download"
+                Return "下载页"
+            Case "link"
+                Return "联机页"
+            Case "setup"
+                Return "设置页"
+            Case "other"
+                Return "工具页"
+            Case "experiment"
+                Return "实验页"
+            Case "chat"
+                Return "聊天室"
+            Case Else
+                Return Key
+        End Select
+    End Function
+
+#End Region
+
 
 End Module

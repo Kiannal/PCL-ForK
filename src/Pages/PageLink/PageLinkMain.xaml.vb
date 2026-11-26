@@ -341,6 +341,14 @@ Public Class PageLinkMain
 
     '页面动画兼容
     Private Sub UpdatePanelVisibility() Handles Me.PageEnter
+        Select Case LinkState
+            Case LinkStates.Waiting, LinkStates.Finished
+                PanLoad.Visibility = Visibility.Collapsed
+                PanContent.Visibility = Visibility.Visible
+            Case Else
+                PanContent.Visibility = Visibility.Collapsed
+                PanLoad.Visibility = Visibility.Visible
+        End Select
         FrmLinkMain.PanSelect.Visibility = If(LinkState = LinkStates.Waiting, Visibility.Visible, Visibility.Collapsed)
         FrmLinkMain.PanFinish.Visibility = If(LinkState = LinkStates.Finished, Visibility.Visible, Visibility.Collapsed)
     End Sub
@@ -783,6 +791,7 @@ Public Class PageLinkMain
         '加载器与进程状态
         LinkLoader.Start(IsForceRestart:=True)
         '页面切换会由 Loader 调用 MyPageRight 来触发
+        UpdatePanelVisibility()
         'UI 更新
         UpdateProgressBar(0)
         LabLoadTitle.Text = If(IsServerSide, "创建房间中", "加入房间中")
@@ -795,6 +804,7 @@ Public Class PageLinkMain
         LinkLoader.Cancel()
         ProcessStop()
         'UI 更新
+        UpdatePanelVisibility()
         UpdateProgressBar(1)
         '显示错误信息
         LabLoadTitle.Text = FailReason
@@ -1174,15 +1184,41 @@ Public Class PageLinkMain
         Dim FallbackDiscoverAddress As String = ServerConfig("Link")("DiscoverPeer").ToString()
         Try
             '从 API 获取节点列表
-            Dim RawNodes As JObject
+            Dim RawNodes As JObject = Nothing
             Dim IsFallbackRawList As Boolean = False
+            Dim CachePath As String = Paths.AppDataThenName & "LinkPeersCache.json"
             Try
-                RawNodes = NetRequestByClient("https://uptime.easytier.cn/api/nodes?page=1&per_page=1000", RequireJson:=True).DeserializeJson()
-            Catch exx As Exception
-                Logger.Warn(exx, "从源站获取节点列表失败，将使用 CDN 缓存")
-                RawNodes = NetRequestByClientRetry("https://easytier.meloong.com/?page=1&per_page=1000", RequireJson:=True).DeserializeJson()
-                IsFallbackRawList = True
+                If Global.System.IO.File.Exists(CachePath) AndAlso
+                   (Date.Now - Global.System.IO.File.GetLastWriteTime(CachePath)).TotalMinutes < 30 Then
+                    RawNodes = Global.System.IO.File.ReadAllText(CachePath).DeserializeJson()
+                    Logger.Info("联机节点列表使用本地缓存")
+                End If
+            Catch
+                RawNodes = Nothing
             End Try
+            If RawNodes Is Nothing Then
+                Try
+                    RawNodes = NetRequestByClient("https://uptime.easytier.cn/api/nodes?page=1&per_page=1000", RequireJson:=True, Timeout:=2500).DeserializeJson()
+                Catch exx As Exception
+                    Logger.Warn(exx, "从源站获取节点列表失败，将使用 CDN 缓存")
+                    Try
+                        RawNodes = NetRequestByClient("https://easytier.meloong.com/?page=1&per_page=1000", RequireJson:=True, Timeout:=2500).DeserializeJson()
+                        IsFallbackRawList = True
+                    Catch ex2 As Exception
+                        If Global.System.IO.File.Exists(CachePath) Then
+                            RawNodes = Global.System.IO.File.ReadAllText(CachePath).DeserializeJson()
+                            IsFallbackRawList = True
+                            Logger.Warn(ex2, "两个节点源均失败，使用过期缓存")
+                        Else
+                            Throw
+                        End If
+                    End Try
+                End Try
+                Try
+                    Global.System.IO.File.WriteAllText(CachePath, RawNodes.ToString())
+                Catch
+                End Try
+            End If
             '分析节点列表
             Dim Nodes As New List(Of JObject) '负载会添加在 load 字段上
             Dim BlackList As List(Of String) = ServerConfig("Link")("PeersBlackList").Select(Function(p) p.ToString).ToList()
@@ -1487,9 +1523,24 @@ ForcedPass:
                 .StandardErrorEncoding = Encoding.UTF8,
                 .WorkingDirectory = PathEasyTier}
             Dim CliProcess As Process = Process.Start(Info)
-            Dim Output As String = CliProcess.StandardOutput.ReadToEnd()
-            CliProcess.WaitForExit(3000)
-            If String.IsNullOrWhiteSpace(Output) Then Output = CliProcess.StandardError.ReadToEnd()
+            Dim Output As String = ""
+            Dim OutTask As Task(Of String) = Task.Run(Function() CliProcess.StandardOutput.ReadToEnd())
+            If OutTask.Wait(4000) Then
+                Output = OutTask.Result
+                CliProcess.WaitForExit(500)
+            Else
+                Logger.Warn("联机模块 CLI 读取超时，已终止进程")
+                Try
+                    CliProcess.Kill()
+                Catch
+                End Try
+            End If
+            If String.IsNullOrWhiteSpace(Output) Then
+                Try
+                    Output = CliProcess.StandardError.ReadToEnd()
+                Catch
+                End Try
+            End If
             Return Output
         Catch ex As Exception
             Logger.Warn(ex, "调用联机模块 CLI 失败")

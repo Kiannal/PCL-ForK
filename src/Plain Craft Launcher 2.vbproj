@@ -1,4 +1,4 @@
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+﻿<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -160,6 +160,11 @@
       <HintPath>Resources\Ookii.Dialogs.Wpf.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="NeteaseCore">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>NeteaseCore\bin\Release\NeteaseCore.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
     <Reference Include="System.Drawing" />
@@ -204,10 +209,12 @@
     <Compile Include="Controls\MyImage.vb" />
     <Compile Include="Controls\FormStartupAnimation.vb" />
     <Compile Include="Controls\FrmScreenshotView.vb" />
-    <Compile Include="Controls\FrmSkinPainter.vb" />
     <Compile Include="Controls\FrmErrorAI.vb" />
     <Compile Include="Controls\FrmCrashFix.vb" />
     <Compile Include="Controls\FrmTerracotta.vb" />
+    <Compile Include="Controls\FrmMapPreview.xaml.vb">
+      <DependentUpon>FrmMapPreview.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Controls\FrmLittleSkin.vb" />
     <Compile Include="Controls\FrmSakuraFrp.vb" />
     <Compile Include="Controls\FrmMusic.vb" />
@@ -268,6 +275,9 @@
     <Compile Include="Modules\ModMusic.vb" />
     <Compile Include="Modules\ModDevelop.vb" />
     <Compile Include="Modules\Minecraft\ModWatcher.vb" />
+    <Compile Include="Modules\ModUpdatePatch.vb" />
+    <Compile Include="Modules\ModCacheClean.vb" />
+    <Compile Include="Modules\ModPerformance.vb" />
     <Compile Include="Modules\ModSecret.vb" />
     <Compile Include="Pages\PageDownload\Resource\PageResource.xaml.vb">
       <DependentUpon>PageResource.xaml</DependentUpon>
@@ -287,6 +297,9 @@
     <Compile Include="Pages\PageDownload\ModDownloadLib.vb" />
     <Compile Include="Pages\PageDownload\Resource\MyResourceItem.xaml.vb">
       <DependentUpon>MyResourceItem.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Pages\PageDownload\Resource\PageDownloadMap.xaml.vb">
+      <DependentUpon>PageDownloadMap.xaml</DependentUpon>
     </Compile>
     <Compile Include="Pages\PageDownload\Resource\PageDownloadMod.xaml.vb">
       <DependentUpon>PageDownloadMod.xaml</DependentUpon>
@@ -353,7 +366,9 @@
     <Compile Include="Modules\Base\ModLoader.vb" />
     <Compile Include="Modules\Base\ModNet.vb" />
     <Compile Include="Modules\Base\ModWallpaperEngine.vb" />
+    <Compile Include="Modules\Base\ModWallpaperDefaults.vb" />
     <Compile Include="Modules\Base\ModNeteaseMusic.vb" />
+    <Compile Include="Modules\ModNeteaseTool.vb" />
     <Compile Include="Modules\Base\ModLaunchIntro.vb" />
     <Compile Include="Modules\Base\ModLinkNodeTest.vb" />
     <Compile Include="Modules\Base\ModValidate.vb" />
@@ -389,9 +404,6 @@
     </Compile>
     <Compile Include="Pages\PageOther\PageExperimentLeft.xaml.vb">
       <DependentUpon>PageExperimentLeft.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="Pages\PageOther\PageSkinPaint.xaml.vb">
-      <DependentUpon>PageSkinPaint.xaml</DependentUpon>
     </Compile>
     <Compile Include="Pages\PageOther\PageExperiment.xaml.vb">
       <DependentUpon>PageExperiment.xaml</DependentUpon>
@@ -458,6 +470,10 @@
     <Compile Include="Pages\PageSpeedRight.xaml.vb">
       <DependentUpon>PageSpeedRight.xaml</DependentUpon>
     </Compile>
+    <Page Include="Controls\FrmMapPreview.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="Controls\MyExtraTextButton.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -595,6 +611,10 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="Pages\PageDownload\Resource\PageDownloadMap.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="Pages\PageDownload\Resource\PageDownloadMod.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -672,10 +692,6 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="Pages\PageOther\PageExperimentLeft.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Include="Pages\PageOther\PageSkinPaint.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
@@ -767,6 +783,41 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="Pages\PageInstance\PageInstanceUpload.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Compile Include="Pages\PageInstance\PageInstanceUpload.xaml.vb">
+      <DependentUpon>PageInstanceUpload.xaml</DependentUpon>
+    </Compile>
+    <Page Include="Pages\PageInstance\PageInstanceDownload.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Compile Include="Pages\PageInstance\PageInstanceDownload.xaml.vb">
+      <DependentUpon>PageInstanceDownload.xaml</DependentUpon>
+    </Compile>
+    <Page Include="Pages\PageDownload\PageDownloadUpload.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Compile Include="Pages\PageDownload\PageDownloadUpload.xaml.vb">
+      <DependentUpon>PageDownloadUpload.xaml</DependentUpon>
+    </Compile>
+    <Page Include="Pages\PageOther\PageOtherNetEase.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Compile Include="Pages\PageOther\PageOtherNetEase.xaml.vb">
+      <DependentUpon>PageOtherNetEase.xaml</DependentUpon>
+    </Compile>
+    <Page Include="Pages\PageOther\PageOtherChat.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Compile Include="Pages\PageOther\PageOtherChat.xaml.vb">
+      <DependentUpon>PageOtherChat.xaml</DependentUpon>
+    </Compile>
     <Page Include="Pages\PageInstance\PageInstanceMod.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -893,6 +944,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Resources\SeedMap\gentool.exe">
       <LogicalName>PCL.SeedMap.gentool.exe</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Resources\NetEase\ES_Tool.zip">
+      <LogicalName>PCL.NetEase.ES_Tool.zip</LogicalName>
     </EmbeddedResource>
     <None Include="Resources\Newtonsoft.Json.dll" />
   </ItemGroup>

@@ -1,4 +1,4 @@
-Public Class MyComboBox
+﻿Public Class MyComboBox
     Inherits ComboBox
     Implements ISettingControl
     Public Event TextChanged(sender As Object, e As TextChangedEventArgs)
@@ -100,19 +100,59 @@ Public Class MyComboBox
         End If
     End Sub
 
-    Private RealWidth As Double '由于下拉框 Popup 宽度与 Width 一致，故不能为 NaN（Auto）
+    Private RealWidth As Double = Double.NaN '未改动过宽度时保持 NaN
     Private Sub MyComboBox_DropDownOpened(sender As Object, e As EventArgs) Handles Me.DropDownOpened
-        RealWidth = Width
-        Width = ActualWidth
-        '将下拉菜单透明度与主窗口同步
+        '自动宽度才需要临时固定，避免首次打开时 dropDownBorder 重排导致抖动
+        If Double.IsNaN(Width) Then
+            RealWidth = Width
+            Width = ActualWidth
+        End If
+        '初值由 XAML 静态给出（Opacity=0、Y=-8），这里只负责推到终值
         Try
-            CType(Template.FindName("PanPopup", Me), Grid).Opacity = FrmMain.Opacity
+            Dim Host As FrameworkElement = TryCast(Template.FindName("PanPopup", Me), FrameworkElement)
+            If Host Is Nothing Then Return
+            Dim Target As Double = If(FrmMain Is Nothing, 1.0, FrmMain.Opacity)
+            Host.Opacity = 0
+            Dim Trans As TranslateTransform = TryCast(Host.RenderTransform, TranslateTransform)
+            If Trans Is Nothing Then
+                Trans = New TranslateTransform(0, -8)
+                Host.RenderTransform = Trans
+                Host.RenderTransformOrigin = New Point(0.5, 0)
+            ElseIf Trans.IsFrozen Then
+                '模板共享的变换会被冻结，克隆一份可写的再改
+                Trans = DirectCast(Trans.Clone(), TranslateTransform)
+                Host.RenderTransform = Trans
+            End If
+            Trans.Y = -8
+            AniStart({
+                AaOpacity(Host, Target, 180, 0, New AniEaseOutFluent),
+                AaTranslateY(Host, 8, 240, 0, New AniEaseOutFluent(AniEasePower.Weak))
+            }, "MyComboBox Drop " & Uuid, True)
         Catch ex As Exception
-            Logger.Error(ex, "设置下拉框透明度失败")
+            Logger.Error(ex, "下拉入场动画失败")
         End Try
     End Sub
     Private Sub MyComboBox_DropDownClosed(sender As Object, e As EventArgs) Handles Me.DropDownClosed
-        Width = RealWidth
+        If Not Double.IsNaN(RealWidth) Then
+            Width = RealWidth
+            RealWidth = Double.NaN
+        End If
+        '关闭后复位初值，下次打开时动画起点已就绪
+        Try
+            Dim Host As FrameworkElement = TryCast(Template.FindName("PanPopup", Me), FrameworkElement)
+            If Host IsNot Nothing Then
+                Host.Opacity = 0
+                Dim Trans As TranslateTransform = TryCast(Host.RenderTransform, TranslateTransform)
+                If Trans IsNot Nothing AndAlso Not Trans.IsFrozen Then
+                    Trans.Y = -8
+                ElseIf Trans IsNot Nothing AndAlso Trans.IsFrozen Then
+                    Dim Copy As TranslateTransform = DirectCast(Trans.Clone(), TranslateTransform)
+                    Copy.Y = -8
+                    Host.RenderTransform = Copy
+                End If
+            End If
+        Catch
+        End Try
     End Sub
 
     '修复 WPF Bug：下拉框文本修改后，依然误认为还选择着此前的选项，导致再次点击该选项时内容不变
